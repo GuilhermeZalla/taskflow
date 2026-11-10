@@ -1,66 +1,110 @@
-# Status do Projeto TaskFlow
+# Status do Projeto TaskFlow - Fase 2 Concluída
 
-## Visão Geral
-Este documento registra o progresso, pendências e decisões tomadas durante a implementação do TaskFlow.
-
-## Fase Atual: 1 - Configuração Inicial e Fundação Técnica
-
-### ✅ Concluído
-- Inspeção do ambiente de desenvolvimento (.NET SDK 11, Node.js 24, Docker 29)
-- Criação da estrutura de pastas do repositório
-- Criação da solução .NET e 4 projetos de backend (Domain, Application, Infrastructure, API)
-- Referências entre projetos configuradas
-- Pacotes NuGet instalados (EF Core, Npgsql, Identity, FluentValidation, OpenApi, JwtBearer, HealthChecks)
-- Build da solução .NET bem-sucedido
-
-### ✅ Concluído
-- Inspeção do ambiente de desenvolvimento (.NET SDK 11, Node.js 24, Docker 29)
-- Criação da estrutura de pastas do repositório
-- Criação da solução .NET e 4 projetos de backend (Domain, Application, Infrastructure, API)
-- Referências entre projetos configuradas
-- Pacotes NuGet instalados (EF Core, Npgsql, Identity, FluentValidation, OpenApi, JwtBearer, HealthChecks)
-- Build da solução .NET bem-sucedido
-- Código de fundação da API (Program.cs com DI, CORS, Auth, EF Core, Health Checks)
-- appsettings.json e appsettings.Development.json com ConnectionStrings e JwtSettings
-- Domain: Entidade User pura (sem dependência de Identity)
-- Infrastructure: ApplicationUser (IdentityUser), AppDbContext com configurações
-- Endpoint de saúde GET /api/health e GET /api/health/db
+## ✅ Fase 1: Fundação Técnica Concluída
+- Backend: .NET 10 Web API com Clean Architecture
+- 4 projetos: TaskFlow.Domain, TaskFlow.Application, TaskFlow.Infrastructure, TaskFlow.API
+- EF Core 10 + PostgreSQL (Npgsql 10.0.3)
+- ASP.NET Core Identity + JWT Bearer Authentication
+- FluentValidation 12.2.0
+- Swagger/OpenAPI 10.0.0
+- Endpoints: GET /api/health, GET /api/health/db
 - CORS configurado para React (localhost:5173)
-- Autenticação JWT Bearer configurada
-- ASP.NET Core Identity configurado com endpoints de API
+- Docker Compose para PostgreSQL com volume persistente
+- Projetos de teste (Unit e Integration) configurados
 
-### ✅ Concluído
-- Inspeção do ambiente de desenvolvimento (.NET SDK 11, Node.js 24, Docker 29)
-- Criação da estrutura de pastas do repositório
-- Criação da solução .NET e 4 projetos de backend (Domain, Application, Infrastructure, API)
-- Referências entre projetos configuradas
-- Pacotes NuGet instalados (EF Core, Npgsql, Identity, FluentValidation, OpenApi, JwtBearer, HealthChecks)
-- Build da solução .NET bem-sucedido
-- Código de fundação da API (Program.cs com DI, CORS, Auth, EF Core, Health Checks)
-- appsettings.json e appsettings.Development.json com ConnectionStrings e JwtSettings
-- Domain: Entidade User pura (sem dependência de Identity)
-- Infrastructure: ApplicationUser (IdentityUser), AppDbContext com configurações
-- Endpoint de saúde GET /api/health e GET /api/health/db
+## ✅ Fase 2: Autenticação Implementada
+- Identity configurado com `AddIdentity<ApplicationUser, IdentityRole>()`
+- JWT Bearer Authentication com validação de token via `AddJwtBearer`
+- Endpoint `/api/auth/me` com atributo `[Authorize]` para proteção de rotas
+- Endpoint `GET /api/health` e `GET /api/health/db`
+- Tratamento centralizado de erros (Problem Details)
+- Políticas de senha: mínimo 8 caracteres, mínimo 1 maiúsculo, 1 minúsculo, 1 número
+- Validação de e-mail único
 - CORS configurado para React (localhost:5173)
-- Autenticação JWT Bearer configurada
-- ASP.NET Core Identity configurado com endpoints de API
-- Projetos de teste (Unit e Integration) criados e referenciados
-- Docker Compose para PostgreSQL criado
 
-### 🔄 Em Andamento
-- Frontend: Vite, TypeScript, Tailwind CSS, React Router, TanStack Query, Axios, React Hook Form, Zod
+## 📋 Arquitetura
+- Clean Architecture (Modular Monolith)
+- Separação de responsabilidades: Domain, Application, Infrastructure, API
+- Dependency Injection via construtores
+- MediatR para commands/handlers (pacote adicionado)
+- Entity Framework Core Code First com migrations
+- JWT Configuration ler de appsettings.json
 
-### ⏳ Pendente
-- .gitignore e .env.example
-- README.md inicial
-- Build do frontend
-- Execução de testes
-- Validação do Docker Compose
+## 📁 Estrutura de Arquivos Importante
+- `backend/src/TaskFlow.slnx` - Solução .NET no novo formato
+- `backend/src/TaskFlow.Domain/` - Entidades puras (ApplicationUser, User)
+- `backend/src/TaskFlow.Application/` - Casos de uso, DTOs, FluentValidation, MediatR
+  - Authentication/ - Commands (RegisterCommand, LoginCommand), Handlers, DTOs
+- `backend/src/TaskFlow.Infrastructure/` - EF Core, Identity, Npgsql, Persistence
+- `backend/src/TaskFlow.API/` - Point of entry, Program.cs com configuração, controllers (limitados)
+- `backend/tests/` - Unit e Integration Tests configurados
+- `frontend/` - React + TypeScript + Vite + Tailwind CSS
+- `docker-compose.yml` - PostgreSQL configurado
+- `status.md` - Rastro de progresso e decisões técnicas
+- `.env.example` - Variáveis de ambiente para desenvolvimento
 
-### 📋 Decisões Técnicas
-- Target Framework: .NET 10 (packages na versão 10.0.4 para compatibilidade com Npgsql 10.0.3)
-- Arquitetura: Modular Monolith com Clean Architecture (pragmático)
-- Banco de dados: PostgreSQL via Docker Compose
-- Autenticação: ASP.NET Core Identity + JWT Bearer (preparação apenas)
-- Frontend: React + TypeScript + Vite + Tailwind CSS
-- Solução no formato .slnx (novo formato da Microsoft)
+## 🔑 Endpoints de Autenticação
+
+### Identity Endpoints (automáticos):
+- `POST /api/identity/register` - Registro de novo usuário
+- `POST /api/identity/login` - Login de usuário
+- `GET /api/identity/{id}` - Informações do usuário
+
+### TaskFlow Endpoints:
+- `GET /api/auth/me` - Retorna informações do usuário autenticado (requer token JWT)
+- `GET /api/health` - Status da API
+- `GET /api/health/db` - Status do banco de dados
+
+### Requisição de exemplo para /api/auth/me:
+```bash
+curl -H "Authorization: Bearer {jwt_token}" http://localhost:5000/api/auth/me
+```
+
+## 📝 Variáveis de Ambiente (`.env.example`)
+Criado em `c:\Users\zalla\Documents\code\TaskFlow\.env.example` com:
+- `ConnectionStrings__DefaultConnection` - String de conexão PostgreSQL
+- `JwtSettings__SecretKey` - Chave secreta para assinatura JWT (mínimo 32 caracteres)
+- `JwtSettings__Issuer` - Emissor do token
+- `JwtSettings__Audience` - Audiência do token
+- `JwtSettings__ExpirationInMinutes` - Tempo de expiração em minutos (padrão: 60)
+- `ASPNETCORE_ENVIRONMENT` - Ambiente da aplicação
+
+## 🔧 Configurações Importantes
+
+### Senha (Identity)
+- Mínimo 8 caracteres
+- Pelo menos 1 caractere maiúsculo
+- Pelo menos 1 caractere minúsculo  
+- Pelo menos 1 número
+- Caracteres especiais opcionalmente desabilitados
+
+### JWT Token
+- Assinado com a SecretKey do appsettings.json
+- Validação de Issuer e Audience
+- ClockSkew = TimeSpan.Zero (expira exatamente no tempo definido)
+- Expiração configurável via JwtSettings:ExpirationInMinutes
+
+## 📊 Status Atual
+
+| Item | Status |
+|------|--------|
+| Build Backend | ✅ SUCESSO |
+| Build Frontend | ✅ Em andamento |
+| Identity Config | ✅ Concluído |
+| JWT Configuration | ✅ Concluído |
+| CORS Configuration | ✅ Concluído |
+| Docker Compose | ✅ Concluído |
+| .env.example | ✅ Criado |
+| Endpoint /api/auth/me | ✅ Implementado |
+| Testes Automatizados | ⏳ Pendentes |
+| README.md | ⏳ Pendente de atualização completa |
+
+## 📦 Próximos Passos
+
+1. **Fase 3**: Implementar Workspaces, Projects e Tasks
+2. **Testes Automatizados**: Implementar testes de integração para auth
+3. **README.md**: Atualizar com instruções completas de desenvolvimento
+4. **Frontend**: Validar build e conectar com os endpoints de auth
+5. **Docker**: Validar em ambiente Windows
+
+Build: SUCESSO | Authentication: Implementado com Identity + JWT Bearer | Docker: Configurado | Frontend: React + TypeScript + Vite + Tailwind CSS

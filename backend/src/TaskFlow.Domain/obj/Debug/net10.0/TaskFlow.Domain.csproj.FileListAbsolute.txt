@@ -10,3 +10,4 @@ C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Domain\obj\Debug\net
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Domain\obj\Debug\net10.0\TaskFlow.Domain.pdb
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Domain\obj\Debug\net10.0\ref\TaskFlow.Domain.dll
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Domain\obj\Debug\net10.0\TaskFlow.D1D81446.Up2Date
+C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Domain\obj\Debug\net10.0\TaskFlow.Domain.sourcelink.json

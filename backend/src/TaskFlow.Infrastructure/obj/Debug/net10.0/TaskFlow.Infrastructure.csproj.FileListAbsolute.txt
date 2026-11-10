@@ -18,3 +18,4 @@ C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Infrastructure\obj\D
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Infrastructure\obj\Debug\net10.0\TaskFlow.Infrastructure.pdb
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Infrastructure\obj\Debug\net10.0\TaskFlow.Infrastructure.genruntimeconfig.cache
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Infrastructure\obj\Debug\net10.0\ref\TaskFlow.Infrastructure.dll
+C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Infrastructure\obj\Debug\net10.0\TaskFlow.Infrastructure.sourcelink.json

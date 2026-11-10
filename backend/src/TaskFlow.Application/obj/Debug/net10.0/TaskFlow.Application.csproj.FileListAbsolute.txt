@@ -13,3 +13,4 @@ C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Application\obj\Debu
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Application\obj\Debug\net10.0\refint\TaskFlow.Application.dll
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Application\obj\Debug\net10.0\TaskFlow.Application.pdb
 C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Application\obj\Debug\net10.0\ref\TaskFlow.Application.dll
+C:\Users\zalla\Documents\code\TaskFlow\backend\src\TaskFlow.Application\obj\Debug\net10.0\TaskFlow.Application.sourcelink.json

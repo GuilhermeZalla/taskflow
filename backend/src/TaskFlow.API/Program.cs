@@ -1,14 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TaskFlow.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// ============================================================================
-// Configuração de serviços
-// ============================================================================
 
 // Add controllers com Problem Details
 builder.Services.AddControllers()
@@ -20,7 +17,7 @@ builder.Services.AddControllers()
 builder.Services.AddProblemDetails();
 
 // Entity Framework Core + PostgreSQL
-builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -30,7 +27,7 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 });
 
 // ASP.NET Core Identity
-builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.User.RequireUniqueEmail = true;
     options.Password.RequireDigit = true;
@@ -39,11 +36,12 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 8;
 })
-.AddEntityFrameworkStores<AppDbContext>();
+.AddEntityFrameworkStores<AppDbContext>()
+.AddApiEndpoints();
 
 // Autenticação JWT Bearer
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey não configurada.");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured.");
 var issuer = jwtSettings["Issuer"] ?? "TaskFlow";
 var audience = jwtSettings["Audience"] ?? "TaskFlow";
 var keyBytes = Encoding.UTF8.GetBytes(secretKey);
@@ -59,9 +57,7 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ValidateIssuer = true,
         ValidIssuer = issuer,
-        ValidateAudience = true,
         ValidAudience = audience,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
@@ -76,9 +72,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -90,10 +86,6 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("postgres", tags: new[] { "db" });
 
 var app = builder.Build();
-
-// ============================================================================
-// Configuração do pipeline HTTP
-// ============================================================================
 
 // Tratamento centralizado de exceções (Problem Details)
 app.UseExceptionHandler();
@@ -112,8 +104,8 @@ app.UseAuthorization();
 
 // Endpoint de saúde
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
-    .WithName("GetHealth")
-    .WithTags("Health");
+   .WithName("GetHealth")
+   .WithTags("Health");
 
 app.MapHealthChecks("/api/health/db", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
@@ -142,5 +134,31 @@ app.MapControllers();
 
 // Convenção de rotas: /api/{resource}
 app.MapGet("/api", () => Results.Ok(new { message = "TaskFlow API", version = "1.0.0" }));
+
+// Endpoint para obter informações do usuário autenticado
+app.MapGet("/api/auth/me", [
+    Authorize
+] async (HttpContext context) =>
+{
+    var user = context.User;
+    
+    if (user == null || !user.Identity!.IsAuthenticated)
+    {
+        return Results.Unauthenticated();
+    }
+
+    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                 ?? user.FindFirst("sub")?.Value;
+    
+    var email = user.Identity?.Name;
+    var fullName = user.FindFirst("fullName")?.Value;
+
+    return Results.Ok(new
+    {
+        UserId = Guid.Parse(userId),
+        Email = email,
+        FullName = fullName
+    });
+});
 
 app.Run();
