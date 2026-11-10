@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export function Register() {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const navigate = useNavigate();
+
+  const handleRegister = () => {
+    if (password !== confirmPassword) return;
+    // TODO: Implementar registro real
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen p-6 bg-gray-50">
+      <h1 className="text-3xl font-bold mb-6">Registro</h1>
+      <div className="max-w-md p-8 bg-white rounded shadow">
+        <form onSubmit={e => {
+          e.preventDefault();
+          handleRegister();
+        }}>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Nome Completo
+            </label>
+            <input
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Email
+            </label>
+            <input
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="email"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Senha
+            </label>
+            <input
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="password"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Confirmar Senha
+            </label>
+            <input
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="password"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded hover:bg-green-700"
+          >
+            Registrar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

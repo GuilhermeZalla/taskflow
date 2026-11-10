@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "+1XiuAPWEHE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\zalla\\Documents\\code\\TaskFlow\\backend\\src\\TaskFlow.Application\\TaskFlow.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\zalla\\.nuget\\packages\\fluentvalidation\\12.2.0\\fluentvalidation.12.2.0.nupkg.sha512",
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\10.0.15\\microsoft.aspnetcore.app.ref.10.0.15.nupkg.sha512",
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.15\\microsoft.netcore.app.ref.10.0.15.nupkg.sha512",
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\10.0.15\\microsoft.windowsdesktop.app.ref.10.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}

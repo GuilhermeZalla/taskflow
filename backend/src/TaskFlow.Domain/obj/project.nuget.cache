@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "V38MkmKsQc0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\zalla\\Documents\\code\\TaskFlow\\backend\\src\\TaskFlow.Domain\\TaskFlow.Domain.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.netcore.app.ref\\10.0.15\\microsoft.netcore.app.ref.10.0.15.nupkg.sha512",
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\10.0.15\\microsoft.windowsdesktop.app.ref.10.0.15.nupkg.sha512",
+    "C:\\Users\\zalla\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\10.0.15\\microsoft.aspnetcore.app.ref.10.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
