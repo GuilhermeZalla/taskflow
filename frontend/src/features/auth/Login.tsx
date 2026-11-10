@@ -1,14 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/services/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const handleLogin = () => {
-    // TODO: Implementar login real
-    navigate('/');
+  const handleLogin = async () => {
+    try {
+      const response = await api.post('/api/identity/login', {
+        email,
+        password,
+      });
+
+      const { AccessToken } = response.data;
+
+      // Store token in localStorage
+      localStorage.setItem('accessToken', AccessToken);
+
+      // Invalidate auth queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+
+      navigate('/');
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
   };
 
   return (
