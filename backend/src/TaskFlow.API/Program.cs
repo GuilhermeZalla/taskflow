@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -81,6 +83,13 @@ builder.Services.AddCors(options =>
 // Swagger / OpenAPI
 builder.Services.AddOpenApi();
 
+// MediatR - registra handlers da API e commands da Application
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.Commands.Workspaces.CreateWorkspaceCommand).Assembly);
+});
+
 // Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("postgres", tags: new[] { "db" });
@@ -136,29 +145,26 @@ app.MapControllers();
 app.MapGet("/api", () => Results.Ok(new { message = "TaskFlow API", version = "1.0.0" }));
 
 // Endpoint para obter informações do usuário autenticado
-app.MapGet("/api/auth/me", [
-    Authorize
-] async (HttpContext context) =>
+app.MapGet("/api/auth/me", (ClaimsPrincipal user) =>
 {
-    var user = context.User;
-    
-    if (user == null || !user.Identity!.IsAuthenticated)
-    {
-        return Results.Unauthenticated();
-    }
+    if (user.Identity?.IsAuthenticated != true)
+        return Results.Unauthorized();
 
     var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
                  ?? user.FindFirst("sub")?.Value;
-    
-    var email = user.Identity?.Name;
+
+    if (!Guid.TryParse(userId, out var parsedUserId))
+        return Results.Unauthorized();
+
+    var email = user.Identity.Name ?? user.FindFirst(ClaimTypes.Email)?.Value;
     var fullName = user.FindFirst("fullName")?.Value;
 
     return Results.Ok(new
     {
-        UserId = Guid.Parse(userId),
+        UserId = parsedUserId,
         Email = email,
         FullName = fullName
     });
-});
+}).RequireAuthorization();
 
 app.Run();

@@ -1,133 +1,133 @@
+using System.Security.Claims;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TaskFlow.Application.Authentication;
+using Microsoft.EntityFrameworkCore;
+using TaskFlow.Application.Commands.Workspaces;
 using TaskFlow.Application.DTOs;
-using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.API.Workspaces;
 
-/// <summary>
-/// Controlador para gerenciamento de workspaces.
-/// </summary>
 [ApiController]
 [Route("api/workspaces")]
 [Authorize]
 public class WorkspacesController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IMediator _mediator;
 
-    public WorkspacesController(AppDbContext context)
+    public WorkspacesController(AppDbContext context, IMediator mediator)
     {
         _context = context;
+        _mediator = mediator;
     }
 
-    /// <summary>
-    /// Obtém todos os workspaces do usuário autenticado.
-    /// </summary>
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = GetUserId();
+        if (userId == Guid.Empty) return Unauthorized();
 
-        var workspaces = _context.Workspaces
-            .Where(w => w.OwnerId == Guid.Parse(userId) || 
-                       _context.WorkspaceMembers.Any(wm => wm.WorkspaceId == w.Id && wm.UserId == Guid.Parse(userId)))
-            .Select(w => new
+        var workspaces = await _context.Workspaces
+            .Where(w => w.OwnerId == userId || w.Members.Any(wm => wm.UserId == userId))
+            .Select(w => new WorkspaceDto
             {
-                w.Id,
-                w.Name,
-                w.Description,
-                OwnerName = w.Owner?.FullName,
-                MemberCount = _context.WorkspaceMembers.Count(wm => wm.WorkspaceId == w.Id)
+                Id = w.Id,
+                Name = w.Name,
+                Description = w.Description,
+                OwnerId = w.OwnerId,
+                CreatedAt = w.CreatedAt,
+                UpdatedAt = w.UpdatedAt,
+                MemberCount = w.Members.Count
             })
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         return Ok(workspaces);
     }
 
-    /// <summary>
-    /// Cria um novo workspace.
-    /// </summary>
     [HttpPost]
-    public IActionResult Create([FromBody] string name)
+    public async Task<IActionResult> Create([FromBody] CreateWorkspaceDto dto, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = GetUserId();
+        if (userId == Guid.Empty) return Unauthorized();
 
-        var workspace = new Workspace
-        {
-            Name = name,
-            OwnerId = Guid.Parse(userId),
-            CreatedAt = DateTime.UtcNow
-        };
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { detail = "O nome do workspace é obrigatório." });
 
-        _context.Workspaces.Add(workspace);
-        
-        // Adiciona o criador como owner/membro
-        var member = new WorkspaceMember
-        {
-            WorkspaceId = workspace.Id,
-            UserId = Guid.Parse(userId),
-            Role = "Owner",
-            JoinedAt = DateTime.UtcNow
-        };
-        
-        _context.WorkspaceMembers.Add(member);
-        _context.SaveChanges();
-
-        return Created($"/api/workspaces/{workspace.Id}", new
-        {
-            workspace.Id,
-            workspace.Name,
-            workspace.Description,
-            workspace.CreatedAt
-        });
+        var result = await _mediator.Send(new CreateWorkspaceCommand(dto, userId), cancellationToken);
+        return Created($"/api/workspaces/{result.Id}", result);
     }
 
-    /// <summary>
-    /// Obtém um workspace específico por ID.
-    /// </summary>
-    [HttpGet("{id}")]
-    public IActionResult GetById(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = GetUserId();
+        if (userId == Guid.Empty) return Unauthorized();
 
-        var workspace = _context.Workspaces
-            .Where(w => w.Id == id && 
-                       (w.OwnerId == Guid.Parse(userId) || 
-                        _context.WorkspaceMembers.Any(wm => wm.WorkspaceId == id && wm.UserId == Guid.Parse(userId))))
-            .Select(w => new
+        var workspace = await _context.Workspaces
+            .Where(w => w.Id == id && (w.OwnerId == userId || w.Members.Any(wm => wm.UserId == userId)))
+            .Select(w => new WorkspaceDto
             {
-                w.Id,
-                w.Name,
-                w.Description,
-                w.OwnerId,
+                Id = w.Id,
+                Name = w.Name,
+                Description = w.Description,
+                OwnerId = w.OwnerId,
                 CreatedAt = w.CreatedAt,
-                MemberCount = _context.WorkspaceMembers.Count(wm => wm.WorkspaceId == w.Id)
+                UpdatedAt = w.UpdatedAt,
+                MemberCount = w.Members.Count
             })
-            .FirstOrDefault();
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (workspace == null)
+        if (workspace == null) return NotFound();
+        return Ok(workspace);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateWorkspaceDto dto, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _mediator.Send(new UpdateWorkspaceCommand(id, dto.Name, dto.Description, userId), cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
         {
             return NotFound();
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
 
-        return Ok(workspace);
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            await _mediator.Send(new DeleteWorkspaceCommand(id, userId), cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    private Guid GetUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(value, out var id) ? id : Guid.Empty;
     }
 }

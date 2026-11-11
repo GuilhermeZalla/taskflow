@@ -11,21 +11,14 @@ export function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await api.post('/api/identity/login', {
-        email,
-        password,
-      });
-
-      const { AccessToken } = response.data;
-
-      // Store token in localStorage
-      localStorage.setItem('accessToken', AccessToken);
-
-      // Invalidate auth queries to refetch
+      const response = await api.post('/api/identity/login', { email, password });
+      const { accessToken } = response.data as { accessToken?: string };
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-
       navigate('/');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login failed:', error);
     }
   };
@@ -35,39 +28,32 @@ export function Login() {
       <h1 className="text-3xl font-bold mb-6">Login</h1>
       <div className="max-w-md p-8 bg-white rounded shadow">
         <form
-          onSubmit={e => {
+          onSubmit={(e) => {
             e.preventDefault();
             handleLogin();
           }}
         >
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Email
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
             <input
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               type="email"
               required
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Senha
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Senha</label>
             <input
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               type="password"
               required
             />
           </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700"
-          >
+          <button type="submit" className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700">
             Entrar
           </button>
         </form>

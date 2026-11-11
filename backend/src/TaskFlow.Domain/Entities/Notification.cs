@@ -11,9 +11,4 @@ public class Notification
     public string Message { get; set; } = string.Empty;
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// Navegação para o usuário.
-    /// </summary>
-    public ApplicationUser User { get; set; } = null!;
 }

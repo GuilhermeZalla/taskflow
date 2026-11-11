@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,26 +9,19 @@ export const api = axios.create({
   },
 });
 
-// Interceptor para adicionar o token no cabeçalho
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+api.interceptors.request.use((config: any) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Interceptor para lidar com erros 401
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const is401 = error.response?.status === 401;
-    if (is401) {
+  (response: any) => response,
+  (error: any) => {
+    if (error?.response?.status === 401) {
       localStorage.removeItem('accessToken');
       window.location.href = '/login';
     }
@@ -37,31 +30,23 @@ api.interceptors.response.use(
 );
 
 export class ApiErrorClass extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public details?: any,
-  ) {
+  status: number;
+  details?: unknown;
+
+  constructor(message: string, status: number, details?: unknown) {
     super(message);
     this.name = 'ApiErrorClass';
+    this.status = status;
+    this.details = details;
   }
 }
 
-export const handleApiError = (error: unknown): ApiErrorClass => {
-  if (error && typeof error === 'object' && 'response' in error && error.response?.status) {
-    const axiosError = error as any;
-    if (axiosError.response?.data) {
-      return axiosError.response.data as ApiErrorClass;
-    }
-    return new ApiErrorClass(
-      axiosError.message || 'Erro na requisição',
-      axiosError.response?.status || 500,
-      axiosError.response?.data as any,
-    );
-  }
-  return new ApiErrorClass(
-    'Erro inesperado',
-    500,
-    error as any,
-  );
+export const handleApiError = (error: any): ApiErrorClass => {
+  const status = error?.response?.status ?? 500;
+  const message =
+    error?.response?.data?.detail ??
+    error?.response?.data?.title ??
+    error?.message ??
+    'Erro na requisição';
+  return new ApiErrorClass(message, status, error?.response?.data);
 };

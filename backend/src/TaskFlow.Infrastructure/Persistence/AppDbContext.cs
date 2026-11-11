@@ -20,7 +20,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<WorkspaceMember> WorkspaceMembers { get; set; } = null!;
     public DbSet<Project> Projects { get; set; } = null!;
     public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
-    public DbSet<Task> Tasks { get; set; } = null!;
+    public DbSet<Domain.Entities.Task> Tasks { get; set; } = null!;
     public DbSet<Subtask> Subtasks { get; set; } = null!;
     public DbSet<Comment> Comments { get; set; } = null!;
     public DbSet<Activity> Activities { get; set; } = null!;
@@ -46,10 +46,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(w => w.Name).IsRequired().HasMaxLength(200);
             entity.Property(w => w.Description).HasMaxLength(500);
             entity.Property(w => w.CreatedAt).IsRequired();
-            entity.HasOne(w => w.Owner)
-                  .WithMany()
-                  .HasForeignKey(w => w.OwnerId)
-                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         // WorkspaceMember
@@ -61,10 +57,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(wm => wm.Workspace)
                   .WithMany(w => w.Members)
                   .HasForeignKey(wm => wm.WorkspaceId)
-                  .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(wm => wm.User)
-                  .WithMany()
-                  .HasForeignKey(wm => wm.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(wm => new { wm.WorkspaceId, wm.UserId }).IsUnique();
         });
@@ -83,14 +75,76 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ProjectMembernio
-        builder.Entity<User>(entity =>
+        // ProjectMember
+        builder.Entity<ProjectMember>(entity =>
         {
-            entity.HasKey(u => u.Id);
-            entity.Property(u => u.FullName).IsRequired().HasMaxLength(200);
-            entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
-            entity.Property(u => u.CreatedAt).IsRequired();
-            entity.HasIndex(u => u.Email).IsUnique();
+            entity.HasKey(pm => pm.Id);
+            entity.Property(pm => pm.Role).IsRequired().HasMaxLength(50);
+            entity.Property(pm => pm.JoinedAt).IsRequired();
+            entity.HasOne(pm => pm.Project)
+                  .WithMany(p => p.Members)
+                  .HasForeignKey(pm => pm.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(pm => new { pm.ProjectId, pm.UserId }).IsUnique();
+        });
+
+        // Task
+        builder.Entity<Domain.Entities.Task>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
+            entity.Property(t => t.Description).HasMaxLength(1000);
+            entity.Property(t => t.Status).IsRequired().HasMaxLength(50);
+            entity.Property(t => t.Priority).IsRequired().HasMaxLength(50);
+            entity.Property(t => t.CreatedAt).IsRequired();
+            entity.HasOne(t => t.Project)
+                  .WithMany(p => p.Tasks)
+                  .HasForeignKey(t => t.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Subtask
+        builder.Entity<Subtask>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Title).IsRequired().HasMaxLength(200);
+            entity.Property(s => s.IsCompleted).IsRequired();
+            entity.Property(s => s.CreatedAt).IsRequired();
+            entity.HasOne(s => s.Task)
+                  .WithMany(t => t.Subtasks)
+                  .HasForeignKey(s => s.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Comment
+        builder.Entity<Comment>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Content).IsRequired().HasMaxLength(2000);
+            entity.Property(c => c.CreatedAt).IsRequired();
+            entity.HasOne(c => c.Task)
+                  .WithMany(t => t.Comments)
+                  .HasForeignKey(c => c.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Activity
+        builder.Entity<Activity>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.EntityType).IsRequired().HasMaxLength(50);
+            entity.Property(a => a.Action).IsRequired().HasMaxLength(50);
+            entity.Property(a => a.CreatedAt).IsRequired();
+        });
+
+        // Notification
+        builder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+            entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+            entity.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+            entity.Property(n => n.IsRead).IsRequired();
+            entity.Property(n => n.CreatedAt).IsRequired();
         });
     }
 }

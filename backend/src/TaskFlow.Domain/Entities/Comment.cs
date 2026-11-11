@@ -12,13 +12,5 @@ public class Comment
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
-    /// <summary>
-    /// Navegação para a tarefa.
-    /// </summary>
     public Task Task { get; set; } = null!;
-
-    /// <summary>
-    /// Navegação para o usuário.
-    /// </summary>
-    public ApplicationUser User { get; set; } = null!;
 }
