@@ -76,7 +76,7 @@ public sealed class TaskCommentsController(
             return NotFound();
         }
 
-        var content = request.Content.Trim();
+        var content = request.Content?.Trim() ?? string.Empty;
         if (content.Length is 0 or > 2000)
         {
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
@@ -248,6 +248,6 @@ public sealed class TaskCommentsController(
         return Guid.TryParse(value, out userId);
     }
 
-    public sealed record CreateCommentRequest(string Content, Guid[]? MentionedUserIds);
+    public sealed record CreateCommentRequest(string? Content, Guid[]? MentionedUserIds);
     public sealed record UpdateCommentRequest(string Content);
 }

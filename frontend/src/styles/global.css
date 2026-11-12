@@ -261,6 +261,13 @@ main#content {
 .button.secondary:hover {
   background: #eaf0e1;
 }
+.sidebar .mobile-menu-toggle.button.secondary {
+  color: #fff;
+  border-color: rgb(255 255 255 / 50%);
+}
+.sidebar .mobile-menu-toggle.button.secondary:hover {
+  background: rgb(255 255 255 / 12%);
+}
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

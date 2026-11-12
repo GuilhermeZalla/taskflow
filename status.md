@@ -1,5 +1,16 @@
 # TaskFlow — Status atual (12/11/2026)
 
+## Rodada de fechamento da 1.0 — 12/11/2026
+
+- Frontend: 26 testes aprovados, tipos aprovados e build de produção aprovado (Vite 8.3.7). A interface foi conferida em 8 rotas internas nas larguras de 390, 768 e 1440 px: páginas carregaram sem rolagem horizontal. O contraste do botão **Menu** no celular foi corrigido e a navegação aberta foi verificada visualmente.
+- Backend: testes da solução aprovados com `DOTNET_ROLL_FORWARD=Major` (5 unitários e 4 de integração HTTP). Dois testes de fluxo foram adicionados para permissões, membros, comentários/menções, notificações, etiquetas, dependências e modelos de projeto. A integração HTTP usa EF Core InMemory e não prova o comportamento das mesmas operações no MySQL.
+- API local iniciada com a configuração já existente: `/api/health` e `/api/health/db` responderam HTTP 200; o check do MySQL informou `Healthy`. Nenhum registro de usuário ou tarefa foi criado no banco real nesta rodada.
+- **Escopo decidido pelo titular:** 1.0 para GitHub e execução local. E-mails de confirmação/recuperação, convites e notificações externas ficam para a 1.1. Hospedagem pública e operação de produção não fazem parte desta entrega.
+- **Limitação antes de usar com dados reais:** falta uma regressão funcional de escrita/leitura no MySQL com dados descartáveis. O health check confirma conexão, não todos os fluxos. MediatR 14.3.0 emite aviso de licença ausente; conferir a licença antes de um deploy de produção.
+- Versão do frontend alinhada para `1.0.0`. Os 974 artefatos gerados de `bin/obj` foram removidos apenas do controle de versão e ignorados; permanecem no disco local. Commit local da entrega registrado; tag e publicação no GitHub são verificadas separadamente.
+- A máquina possui runtime `Microsoft.NETCore.App` 10, mas apenas `Microsoft.AspNetCore.App` 11. Os testes da API usaram roll-forward para 11; o ambiente final precisa do runtime ASP.NET Core 10 ou de uma decisão explícita de atualização.
+- Confirmação/recuperação de conta, convites por e-mail e notificações externas foram adiados para a 1.1. A gestão de participantes cadastrados e as notificações internas estão implementadas.
+
 ## Entrega dos pontos 1 a 6
 
 - **1. Backend e autenticação:** ASP.NET Identity, EF Core 10.0.12 e MySQL 8.0 pelo provedor oficial `MySql.EntityFrameworkCore` 10.0.12. Registro/login, perfil, validação e migrations incluídos.
@@ -14,16 +25,36 @@
 ## Validação e pendências
 
 - `dotnet build backend/TaskFlow.slnx --no-restore`: aprovado, 0 avisos/erros.
-- `dotnet test backend/TaskFlow.slnx --no-restore`: 7 aprovados (5 unitários, 2 HTTP/in-memory). Neste computador foi usado `DOTNET_ROLL_FORWARD=Major` devido à ausência do runtime ASP.NET Core 10.
+- `dotnet test backend/TaskFlow.slnx --no-restore`: 9 aprovados (5 unitários, 4 HTTP/in-memory). Neste computador foi usado `DOTNET_ROLL_FORWARD=Major` devido à ausência do runtime ASP.NET Core 10.
 - `npm test --prefix frontend`: 26 aprovados; `npm run build --prefix frontend`: aprovado.
 - Nenhum pacote vulnerável reportado para a API.
-- A migration e os health checks foram verificados no MySQL local. Os testes de integração ainda não cobrem todos os fluxos recentes de colaboração e planejamento; testar esses fluxos via interface/API permanece pendente.
-- Confirmação/recuperação por e-mail, convites por e-mail, notificações externas e deploy permanecem pendentes. Nenhuma alteração foi commitada ou enviada ao GitHub.
+- A migration e os health checks foram verificados no MySQL local. Os testes HTTP cobrem fluxos centrais de colaboração e planejamento em memória; testar todos esses fluxos contra o MySQL continua pendente.
+- E-mails e notificações externas são escopo da 1.1. Deploy online é um projeto posterior. O commit local desta rodada foi registrado; a publicação remota precisa de verificação separada.
 
 ## Próximos passos
 
 1. Testar cadastro/login e os fluxos de equipes, comentários, notificações, relatórios, etiquetas, dependências e modelos usando a API local e o banco recém-criado.
-2. Configurar e-mail e deploy se forem necessários.
+2. Validar com dados descartáveis a escrita/leitura integrada no MySQL antes de confiar dados reais à aplicação.
+3. Fazer commit, tag e publicação da 1.0 no GitHub com notas e limites de validação explícitos.
+4. Para uma futura hospedagem pública: definir servidor/domínio, HTTPS, segredos, logs, backup/restauração, runtime ASP.NET Core 10 e licença do MediatR.
+5. Para a 1.1: definir e implementar e-mails de conta, convites e eventual notificação externa.
+
+## Pendências para a versão 1.0
+
+- [ ] Validar os fluxos completos integrados ao MySQL: cadastro, login, equipes, comentários/menções, notificações, relatórios/exportação e recursos de organização.
+- [x] Reexecutar build e testes do frontend após as alterações visuais recentes e corrigir falhas encontradas.
+- [x] Conferir as 8 rotas internas em desktop, tablet e celular, sem rolagem horizontal; corrigir o contraste do menu móvel.
+- [x] Definir e-mails e notificações externas para a 1.1; manter as notificações internas funcionais.
+- [x] Tirar artefatos `bin/obj` do controle de versão e alinhar o frontend para `1.0.0`.
+- [ ] Realizar regressão final e publicar a versão 1.0 com número e notas de versão.
+- [x] Registrar o commit local da versão 1.0.
+- [ ] Publicar commit/tag no GitHub e conferir o resultado remoto.
+
+## Após a versão local/GitHub
+
+- [ ] Preparar produção com segredos seguros, banco/migrations, domínio e HTTPS, logs, backups e plano de recuperação.
+- [ ] Conferir licença de produção do MediatR e instalar runtime ASP.NET Core 10 no servidor.
+- [ ] Implementar e validar e-mails de conta, convites e eventual notificação externa na 1.1.
 ---
 # TaskFlow - Status do Projeto
 

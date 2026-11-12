@@ -84,9 +84,14 @@ public sealed class NotificationsController(AppDbContext context) : ControllerBa
             return Unauthorized();
         }
 
-        await context.Notifications
+        var unreadNotifications = await context.Notifications
             .Where(item => item.UserId == userId && !item.IsRead)
-            .ExecuteUpdateAsync(update => update.SetProperty(item => item.IsRead, true), cancellationToken);
+            .ToListAsync(cancellationToken);
+        foreach (var notification in unreadNotifications)
+        {
+            notification.IsRead = true;
+        }
+        await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
 
