@@ -1,27 +1,27 @@
 # TaskFlow 1.0.0
 
-Primeira versão da aplicação web para execução local e apresentação pelo GitHub. Não inclui aplicativo nativo nem hospedagem pública.
+The first release of the web application for local use and presentation through GitHub. It does not include a native app or public hosting.
 
-## Incluído
+## Included
 
-- Interface responsiva em português e inglês, com demonstração de dados fictícios no navegador.
-- Autenticação, espaços de trabalho, projetos e tarefas com API C# e MySQL.
-- Equipes, comentários com menções, notificações internas, etiquetas, dependências e modelos de projeto.
-- Calendário, histórico de atividade, relatórios e exportação CSV.
-- README com instruções de execução, capturas e demonstrações; PDF independente de apresentação do projeto.
+- Responsive interface in Portuguese and English, with fictional sample data in the browser demo.
+- Authentication, workspaces, projects, and tasks through a C# API and MySQL.
+- Teams, comments with mentions, in-app notifications, labels, dependencies, and project templates.
+- Calendar, activity history, reports, and CSV export.
+- README with setup instructions, screenshots, and demos; standalone PDF project presentation.
 
-## Verificação
+## Verification
 
-- 26 testes do frontend e build de produção aprovados.
-- 5 testes unitários e 4 testes HTTP da API aprovados; os testes HTTP usam EF Core InMemory.
-- Health checks da API local responderam HTTP 200, incluindo conexão MySQL `Healthy`.
-- Oito rotas internas conferidas em larguras de 390, 768 e 1440 px, sem rolagem horizontal.
+- 26 frontend tests and the production build passed.
+- 5 API unit tests and 4 HTTP tests passed; the HTTP tests use EF Core InMemory.
+- Local API health checks returned HTTP 200, including a `Healthy` MySQL connection.
+- Eight internal routes were checked at widths of 390, 768, and 1440 px, with no horizontal scrolling.
 
-## Limitações conhecidas
+## Known limitations
 
-- A rodada de testes HTTP não substitui uma regressão completa dos fluxos de escrita e leitura no MySQL real. O usuário deve testar com dados descartáveis antes de confiar dados próprios à aplicação.
-- Nesta máquina, os testes da API usaram `DOTNET_ROLL_FORWARD=Major` porque falta o runtime ASP.NET Core 10; para execução padrão, instale o runtime ASP.NET Core 10.
-- Confirmação e recuperação de conta por e-mail, convites por e-mail e notificações externas foram adiados para a 1.1.
-- Uma futura publicação online precisa de HTTPS, segredos seguros, logs, backup/restauração e conferência da licença de produção do MediatR 14.3.0.
+- The HTTP test run does not replace full regression testing of read and write flows against real MySQL. Use disposable data before trusting the application with personal data.
+- On the development machine, API tests used `DOTNET_ROLL_FORWARD=Major` because the ASP.NET Core 10 runtime was missing. For standard execution, install the ASP.NET Core 10 runtime.
+- Account confirmation and recovery by email, email invitations, and external notifications have been postponed to version 1.1.
+- A future online deployment requires HTTPS, secure secrets, logs, backup and restore procedures, and a review of the MediatR 14.3.0 production license.
 
-As instruções de instalação e execução estão no [README](../README.md). O acompanhamento técnico está em [status.md](../status.md).
+See the [README](../README.md) for setup and run instructions. See [status.md](../status.md) for technical progress and remaining work.
