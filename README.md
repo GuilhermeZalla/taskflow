@@ -1,6 +1,6 @@
 # TaskFlow
 
-A collaborative project and task management web application built for a portfolio. It brings workspaces, priorities, assignees, deadlines, and delivery tracking together in an interface available in Portuguese and English.
+A project and task management web application built for a portfolio. It brings workspaces, priorities, assignees, deadlines, and delivery tracking together in an interface available in Portuguese and English.
 
 The frontend uses React and TypeScript; the API is built with C#, ASP.NET Core, Entity Framework Core, and MySQL. The project includes a demo mode with fictional data in the browser and a separate authentication and persistence flow through the API. **There is no native app or documented production deployment.**
 
