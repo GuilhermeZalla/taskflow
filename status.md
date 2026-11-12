@@ -7,7 +7,7 @@
 - API local iniciada com a configuração já existente: `/api/health` e `/api/health/db` responderam HTTP 200; o check do MySQL informou `Healthy`. Nenhum registro de usuário ou tarefa foi criado no banco real nesta rodada.
 - **Escopo decidido pelo titular:** 1.0 para GitHub e execução local. E-mails de confirmação/recuperação, convites e notificações externas ficam para a 1.1. Hospedagem pública e operação de produção não fazem parte desta entrega.
 - **Limitação antes de usar com dados reais:** falta uma regressão funcional de escrita/leitura no MySQL com dados descartáveis. O health check confirma conexão, não todos os fluxos. MediatR 14.3.0 emite aviso de licença ausente; conferir a licença antes de um deploy de produção.
-- Versão do frontend alinhada para `1.0.0`. Os 974 artefatos gerados de `bin/obj` foram removidos apenas do controle de versão e ignorados; permanecem no disco local. Commit local da entrega registrado; tag e publicação no GitHub são verificadas separadamente.
+- Versão do frontend alinhada para `1.0.0`. Os 974 artefatos gerados de `bin/obj` foram removidos apenas do controle de versão e ignorados; permanecem no disco local. Commit `fa261e5`, tag `v1.0.0` e página de Release publicados no GitHub.
 - A máquina possui runtime `Microsoft.NETCore.App` 10, mas apenas `Microsoft.AspNetCore.App` 11. Os testes da API usaram roll-forward para 11; o ambiente final precisa do runtime ASP.NET Core 10 ou de uma decisão explícita de atualização.
 - Confirmação/recuperação de conta, convites por e-mail e notificações externas foram adiados para a 1.1. A gestão de participantes cadastrados e as notificações internas estão implementadas.
 
@@ -29,13 +29,13 @@
 - `npm test --prefix frontend`: 26 aprovados; `npm run build --prefix frontend`: aprovado.
 - Nenhum pacote vulnerável reportado para a API.
 - A migration e os health checks foram verificados no MySQL local. Os testes HTTP cobrem fluxos centrais de colaboração e planejamento em memória; testar todos esses fluxos contra o MySQL continua pendente.
-- E-mails e notificações externas são escopo da 1.1. Deploy online é um projeto posterior. O commit local desta rodada foi registrado; a publicação remota precisa de verificação separada.
+- E-mails e notificações externas são escopo da 1.1. Deploy online é um projeto posterior. A versão local 1.0.0 foi publicada no GitHub.
 
 ## Próximos passos
 
 1. Testar cadastro/login e os fluxos de equipes, comentários, notificações, relatórios, etiquetas, dependências e modelos usando a API local e o banco recém-criado.
 2. Validar com dados descartáveis a escrita/leitura integrada no MySQL antes de confiar dados reais à aplicação.
-3. Fazer commit, tag e publicação da 1.0 no GitHub com notas e limites de validação explícitos.
+3. Conferir a instalação local a partir da tag `v1.0.0` em um ambiente limpo.
 4. Para uma futura hospedagem pública: definir servidor/domínio, HTTPS, segredos, logs, backup/restauração, runtime ASP.NET Core 10 e licença do MediatR.
 5. Para a 1.1: definir e implementar e-mails de conta, convites e eventual notificação externa.
 
@@ -46,9 +46,9 @@
 - [x] Conferir as 8 rotas internas em desktop, tablet e celular, sem rolagem horizontal; corrigir o contraste do menu móvel.
 - [x] Definir e-mails e notificações externas para a 1.1; manter as notificações internas funcionais.
 - [x] Tirar artefatos `bin/obj` do controle de versão e alinhar o frontend para `1.0.0`.
-- [ ] Realizar regressão final e publicar a versão 1.0 com número e notas de versão.
+- [x] Publicar a versão 1.0.0 no GitHub com número, tag e notas de versão.
 - [x] Registrar o commit local da versão 1.0.
-- [ ] Publicar commit/tag no GitHub e conferir o resultado remoto.
+- [x] Publicar commit/tag no GitHub e conferir o resultado remoto.
 
 ## Após a versão local/GitHub
 
