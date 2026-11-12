@@ -60,18 +60,10 @@ export function Home() {
         </div>
         <div className="metrics overview-metrics">
           {[
-            [
-              translate("Projetos ativos"),
-              summary.activeProjects,
-              translate("Frentes em andamento"),
-            ],
-            [
-              translate("Total de tarefas"),
-              summary.tasks.length,
-              translate("Neste espaço de trabalho"),
-            ],
-            [translate("Em aberto"), summary.open, translate("Aguardando conclusão")],
+            [translate("Tarefas em aberto"), summary.open, translate("Aguardando conclusão")],
             [translate("Concluídas"), summary.completed, translate("Entregas realizadas")],
+            [translate("Projetos ativos"), summary.activeProjects, translate("Frentes em andamento")],
+            [translate("Prazos vencidos"), summary.overdue, translate("Precisam de atenção")],
           ].map(([label, value, note]) => (
             <div className="metric" key={label}>
               <span>{label}</span>

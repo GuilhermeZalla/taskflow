@@ -24,7 +24,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
         <Link className="brand" to="/login">
           <span className="brand-mark">t.</span>TaskFlow
         </Link>
-        <div>
+        <div className="auth-story-message">
           <p className="eyebrow">{translate("MENOS DISPERSÃO. MAIS DIREÇÃO.")}</p>
           <h1>
             {translate("Seu trabalho,")} <br />
@@ -35,17 +35,11 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               "Reúna projetos, organize prioridades e acompanhe as entregas em um só lugar.",
             )}
           </p>
-          <div className="auth-steps">
-            <span>
-              01 <strong>{translate("Organize o contexto")}</strong>
-            </span>
-            <span>
-              02 <strong>{translate("Defina as prioridades")}</strong>
-            </span>
-            <span>
-              03 <strong>{translate("Acompanhe o progresso")}</strong>
-            </span>
-          </div>
+          <ol className="auth-principles" aria-label={translate("Princípios do TaskFlow")}>
+            <li><span>01</span>{translate("Organize o contexto")}</li>
+            <li><span>02</span>{translate("Defina as prioridades")}</li>
+            <li><span>03</span>{translate("Acompanhe o progresso")}</li>
+          </ol>
         </div>
         <small>{translate("Projetos e tarefas, com clareza.")}</small>
       </section>

@@ -30,6 +30,16 @@ export function summarizeOverview<P extends ProjectRecord, T extends TaskRecord>
   const selectedTasks = workspaceId ? tasks.filter((t) => ids.has(t.projectId)) : tasks;
   const completed = selectedTasks.filter((t) => isCompleted(t.status));
   const open = selectedTasks.filter((t) => !isCompleted(t.status));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const overdue = open.filter((task) => {
+    if (!task.dueDate) return false;
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)
+      ? new Date(task.dueDate + "T00:00:00")
+      : new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return Number.isFinite(dueDate.getTime()) && dueDate < today;
+  });
   const priorities = [...open].sort(
     (a, b) =>
       (rank[normalize(a.priority)] ?? 4) - (rank[normalize(b.priority)] ?? 4) ||
@@ -75,6 +85,7 @@ export function summarizeOverview<P extends ProjectRecord, T extends TaskRecord>
     tasks: selectedTasks,
     completed: completed.length,
     open: open.length,
+    overdue: overdue.length,
     activeProjects: selectedProjects.filter(
       (p) => !["completed", "done", "cancelled"].includes(normalize(p.status)),
     ).length,

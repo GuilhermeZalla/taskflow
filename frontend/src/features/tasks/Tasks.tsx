@@ -57,9 +57,9 @@ export function Tasks() {
       setBusy("");
     }
   }
-  function row(t: Task) {
+  function row(t: Task, asBoardCard = false) {
     return (
-      <article className="task-line task-record" key={t.id}>
+      <article className={"task-line task-record" + (asBoardCard ? " task-board-card" : "")} key={t.id}>
         <button
           className={"task-check " + (completed(t.status) ? "done" : taskStatus(t.status))}
           disabled={!!busy}
@@ -71,12 +71,19 @@ export function Tasks() {
           {completed(t.status) ? "✓" : ""}
         </button>
         <div className="task-copy">
+          {asBoardCard && (
+            <small className="task-board-project">
+              {query.data?.projects.find((p) => p.id === t.projectId)?.name || translate("Projeto")}
+            </small>
+          )}
           <Link className="task-title" to={"/tasks/" + t.id + "/edit"}>
             {t.title}
           </Link>
-          <small>
-            {query.data?.projects.find((p) => p.id === t.projectId)?.name || translate("Projeto")}
-          </small>
+          {!asBoardCard && (
+            <small>
+              {query.data?.projects.find((p) => p.id === t.projectId)?.name || translate("Projeto")}
+            </small>
+          )}
           {t.description && <p className="task-description">{t.description}</p>}
           <div className="task-details">
             <span className={isOverdue(t.dueDate, t.status) ? "due-late" : ""}>
@@ -88,7 +95,7 @@ export function Tasks() {
           </div>
         </div>
         <span className={"badge " + t.priority.toLowerCase()}>{statusLabel(t.priority)}</span>
-        <label className="task-status-control">
+        <label className={"task-status-control" + (asBoardCard ? " board-card-hidden-control" : "")}>
           <span className="sr-only">
             {translate("Status de")} {t.title}
           </span>
@@ -110,14 +117,14 @@ export function Tasks() {
           </select>
         </label>
         <Link
-          className="quiet"
+          className={"quiet" + (asBoardCard ? " board-card-open" : "")}
           to={"/tasks/" + t.id + "/edit"}
           aria-label={translate("Editar ") + t.title}
         >
           {translate("Editar")}{" "}
         </Link>
         <button
-          className="quiet delete"
+          className={"quiet delete" + (asBoardCard ? " board-card-hidden-control" : "")}
           disabled={!!busy}
           onClick={() => void change(t, t.status, true)}
           aria-label={translate("Excluir ") + t.title}
@@ -227,7 +234,7 @@ export function Tasks() {
             {action("/tasks/create", translate("Criar tarefa"))}
           </div>
         ) : view === "list" ? (
-          <section className="panel task-list">{items.map(row)}</section>
+          <section className="panel task-list">{items.map((task) => row(task))}</section>
         ) : (
           <div className="board">
             {[
@@ -246,7 +253,7 @@ export function Tasks() {
                   {statusLabel(key)}
                   <span>{items.filter((t) => taskStatus(t.status) === key).length}</span>
                 </h2>
-                {items.filter((t) => taskStatus(t.status) === key).map(row)}
+                {items.filter((t) => taskStatus(t.status) === key).map((task) => row(task, true))}
                 {!items.some((t) => taskStatus(t.status) === key) && (
                   <p className="board-empty">{translate("Sem tarefas nesta etapa.")}</p>
                 )}
