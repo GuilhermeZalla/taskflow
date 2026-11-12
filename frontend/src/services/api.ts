@@ -55,6 +55,7 @@ export const handleApiError = (error: any): ApiErrorClass => {
   const message =
     error?.response?.data?.detail ??
     error?.response?.data?.title ??
+    Object.values(error?.response?.data?.errors ?? {}).flat().find(Boolean) ??
     error?.message ??
     "Erro na requisição";
   return new ApiErrorClass(message, status, error?.response?.data);

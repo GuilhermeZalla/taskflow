@@ -1,3 +1,30 @@
+# TaskFlow — Status atual (12/11/2026)
+
+## Entrega dos pontos 1 a 6
+
+- **1. Backend e autenticação:** ASP.NET Identity, EF Core 10.0.12 e MySQL 8.0 pelo provedor oficial `MySql.EntityFrameworkCore` 10.0.12. Registro/login, perfil, validação e migrations incluídos.
+- **Banco local:** `TaskFlowDb` criado no MySQL 8.0 da porta 3307; usuário `taskflow` com permissões somente nesse banco. Migration `20261112031633_InitialMySql` aplicada e confirmada no histórico do EF Core. Segredo guardado no `.env` local, ignorado pelo Git.
+- **API local:** iniciada em `http://127.0.0.1:5080`. `/api/health` retornou `healthy` e `/api/health/db` retornou `Healthy` com a conexão MySQL real.
+- **2. Equipes e atividade:** gestão autenticada de participantes cadastrados e histórico de eventos reais.
+- **3. Comentários e menções:** comentários em tarefas, menções validadas no espaço e notificações correspondentes.
+- **4. Notificações e lembretes:** central no cabeçalho, leitura individual/em lote e lembretes no app antes do prazo.
+- **5. Relatórios:** filtros por espaço, projeto e intervalo de prazo, com exportação CSV.
+- **6. Organização:** etiquetas, dependências com bloqueio de ciclos/pré-requisitos e modelos de projeto com cópia das tarefas.
+
+## Validação e pendências
+
+- `dotnet build backend/TaskFlow.slnx --no-restore`: aprovado, 0 avisos/erros.
+- `dotnet test backend/TaskFlow.slnx --no-restore`: 7 aprovados (5 unitários, 2 HTTP/in-memory). Neste computador foi usado `DOTNET_ROLL_FORWARD=Major` devido à ausência do runtime ASP.NET Core 10.
+- `npm test --prefix frontend`: 26 aprovados; `npm run build --prefix frontend`: aprovado.
+- Nenhum pacote vulnerável reportado para a API.
+- A migration e os health checks foram verificados no MySQL local. Os testes de integração ainda não cobrem todos os fluxos recentes de colaboração e planejamento; testar esses fluxos via interface/API permanece pendente.
+- Confirmação/recuperação por e-mail, convites por e-mail, notificações externas e deploy permanecem pendentes. Nenhuma alteração foi commitada ou enviada ao GitHub.
+
+## Próximos passos
+
+1. Testar cadastro/login e os fluxos de equipes, comentários, notificações, relatórios, etiquetas, dependências e modelos usando a API local e o banco recém-criado.
+2. Configurar e-mail e deploy se forem necessários.
+---
 # TaskFlow - Status do Projeto
 
 ## Idiomas português e inglês — 11/11/2026

@@ -9,6 +9,7 @@ import { startDemo } from "@/services/demo";
 export function AuthForm({ register = false }: { register?: boolean }) {
   useLanguage();
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [visible, setVisible] = useState(false);
@@ -65,8 +66,9 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             setBusy(true);
             try {
               if (register) {
-                await api.post("/register", { email, password });
+                await api.post("/api/auth/register", { fullName, email, password });
                 setMessage("Conta criada. Entre com seu e-mail e senha.");
+                setFullName("");
                 setPassword("");
                 setConfirm("");
               } else {
@@ -94,6 +96,19 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               ? translate("Prepare seu espaço para organizar o trabalho.")
               : translate("Acesse seus projetos e continue de onde parou.")}
           </p>
+          {register && (
+            <label>
+              {translate("Nome completo")} {" "}
+              <input
+                type="text"
+                autoComplete="name"
+                value={fullName}
+                required
+                maxLength={200}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </label>
+          )}
           <label>
             {translate("E-mail")}{" "}
             <input

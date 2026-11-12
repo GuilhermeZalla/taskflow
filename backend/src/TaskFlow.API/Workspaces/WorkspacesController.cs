@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Application.Commands.Workspaces;
 using TaskFlow.Application.DTOs;
+using TaskFlow.API.Collaboration;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.API.Workspaces;
@@ -16,11 +17,13 @@ public class WorkspacesController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IMediator _mediator;
+    private readonly ActivityRecorder _activityRecorder;
 
-    public WorkspacesController(AppDbContext context, IMediator mediator)
+    public WorkspacesController(AppDbContext context, IMediator mediator, ActivityRecorder activityRecorder)
     {
         _context = context;
         _mediator = mediator;
+        _activityRecorder = activityRecorder;
     }
 
     [HttpGet]
@@ -56,6 +59,8 @@ public class WorkspacesController : ControllerBase
             return BadRequest(new { detail = "O nome do workspace é obrigatório." });
 
         var result = await _mediator.Send(new CreateWorkspaceCommand(dto, userId), cancellationToken);
+        await _activityRecorder.RecordAsync(
+            result.Id, null, null, userId, "workspaces", result.Id.ToString(), result.Name, "criado", cancellationToken);
         return Created($"/api/workspaces/{result.Id}", result);
     }
 
@@ -92,6 +97,8 @@ public class WorkspacesController : ControllerBase
         try
         {
             var result = await _mediator.Send(new UpdateWorkspaceCommand(id, dto.Name, dto.Description, userId), cancellationToken);
+            await _activityRecorder.RecordAsync(
+                id, null, null, userId, "workspaces", id.ToString(), result.Name, "atualizado", cancellationToken);
             return Ok(result);
         }
         catch (KeyNotFoundException)

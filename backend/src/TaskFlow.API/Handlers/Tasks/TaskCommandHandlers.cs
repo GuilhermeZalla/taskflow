@@ -21,11 +21,21 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
         var project = await _context.Projects.FindAsync([request.Dto.ProjectId], cancellationToken)
             ?? throw new KeyNotFoundException("Projeto não encontrado.");
 
-        var isMember = await _context.ProjectMembers.AnyAsync(pm =>
-            pm.ProjectId == request.Dto.ProjectId && pm.UserId == request.UserId, cancellationToken);
+        var role = await _context.ProjectMembers
+            .Where(member => member.ProjectId == request.Dto.ProjectId && member.UserId == request.UserId)
+            .Select(member => member.Role)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!isMember)
+        if (role is null)
             throw new UnauthorizedAccessException("Você não tem acesso a este projeto.");
+
+        if (role == "Observer")
+            throw new UnauthorizedAccessException("Observadores não podem criar tarefas.");
+
+        if (request.Dto.AssignedToId.HasValue && !await _context.ProjectMembers.AnyAsync(member =>
+            member.ProjectId == request.Dto.ProjectId && member.UserId == request.Dto.AssignedToId.Value,
+            cancellationToken))
+            throw new InvalidOperationException("O responsável precisa fazer parte da equipe do projeto.");
 
         var task = new DomainTask
         {
@@ -76,11 +86,31 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         var task = await _context.Tasks.FindAsync([request.Id], cancellationToken)
             ?? throw new KeyNotFoundException("Tarefa não encontrada.");
 
-        var isMember = await _context.ProjectMembers.AnyAsync(pm =>
-            pm.ProjectId == task.ProjectId && pm.UserId == request.UserId, cancellationToken);
+        var role = await _context.ProjectMembers
+            .Where(member => member.ProjectId == task.ProjectId && member.UserId == request.UserId)
+            .Select(member => member.Role)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!isMember)
+        if (role is null)
             throw new UnauthorizedAccessException("Você não tem acesso a este projeto.");
+
+        if (role == "Observer")
+            throw new UnauthorizedAccessException("Observadores não podem editar tarefas.");
+
+        if (request.AssignedToId.HasValue && !await _context.ProjectMembers.AnyAsync(member =>
+            member.ProjectId == task.ProjectId && member.UserId == request.AssignedToId.Value,
+            cancellationToken))
+            throw new InvalidOperationException("O responsável precisa fazer parte da equipe do projeto.");
+
+        if ((request.Status is "Done" or "Completed") && task.Status is not ("Done" or "Completed"))
+        {
+            var hasIncompletePrerequisite = await _context.TaskDependencies
+                .AnyAsync(dependency => dependency.TaskId == task.Id &&
+                    dependency.DependsOnTask.Status != "Done" && dependency.DependsOnTask.Status != "Completed",
+                    cancellationToken);
+            if (hasIncompletePrerequisite)
+                throw new InvalidOperationException("Conclua as tarefas predecessoras antes de finalizar esta tarefa.");
+        }
 
         task.Title = request.Title;
         task.Description = request.Description;
@@ -128,11 +158,16 @@ public class DeleteTaskCommandHandler : IRequestHandler<DeleteTaskCommand, bool>
         var task = await _context.Tasks.FindAsync([request.Id], cancellationToken)
             ?? throw new KeyNotFoundException("Tarefa não encontrada.");
 
-        var isMember = await _context.ProjectMembers.AnyAsync(pm =>
-            pm.ProjectId == task.ProjectId && pm.UserId == request.UserId, cancellationToken);
+        var role = await _context.ProjectMembers
+            .Where(member => member.ProjectId == task.ProjectId && member.UserId == request.UserId)
+            .Select(member => member.Role)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!isMember)
+        if (role is null)
             throw new UnauthorizedAccessException("Você não tem acesso a este projeto.");
+
+        if (role is not ("Owner" or "Manager"))
+            throw new UnauthorizedAccessException("Apenas proprietários e gerentes podem excluir tarefas.");
 
         _context.Tasks.Remove(task);
         await _context.SaveChangesAsync(cancellationToken);

@@ -1,19 +1,20 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: taskflow-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: taskflow-mysql
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-TaskFlowDb}
-      POSTGRES_USER: ${POSTGRES_USER:-taskflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskflow123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-TaskFlowDb}
+      MYSQL_USER: ${MYSQL_USER:-taskflow}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - taskflow_postgres_data:/var/lib/postgresql/data
+      - taskflow_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskflow} -d ${POSTGRES_DB:-TaskFlowDb}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,5 +22,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  taskflow_postgres_data:
+  taskflow_mysql_data:
     driver: local

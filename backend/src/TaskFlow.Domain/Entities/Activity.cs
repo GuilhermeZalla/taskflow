@@ -12,6 +12,7 @@ public class Activity
     public Guid UserId { get; set; }
     public string EntityType { get; set; } = string.Empty;
     public string EntityId { get; set; } = string.Empty;
+    public string EntityName { get; set; } = string.Empty;
     public string Action { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 

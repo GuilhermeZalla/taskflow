@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, handleApiError } from "@/services/api";
 import { isDemo, type DemoMember } from "@/services/demo";
 import { PageHeading, Feedback } from "@/components/ui/Shared";
-import { IntegrationNotice } from "@/components/ui/IntegrationNotice";
 import { useWorkData } from "@/features/work/useWorkData";
 import { completed, searchText } from "@/features/work/workflow";
 export function Teams() {
@@ -14,8 +13,8 @@ export function Teams() {
   const demo = isDemo();
   const cache = useQueryClient();
   const members = useQuery({
-    queryKey: ["demo-members"],
-    enabled: demo,
+    queryKey: ["workspace-members"],
+    enabled: true,
     queryFn: async () => (await api.get<DemoMember[]>("/api/members")).data,
   });
   const [search, setSearch] = useState(""),
@@ -34,14 +33,22 @@ export function Teams() {
       searchText(m.name + " " + m.email).includes(searchText(search)),
   );
   async function remove(member: DemoMember) {
-    if (!confirm(translate("Remover ") + member.name + translate(" da equipe de demonstração?")))
+    if (
+      !confirm(
+        translate("Remover ") + member.name + translate(demo ? " da equipe de demonstração?" : " da equipe?"),
+      )
+    )
       return;
     setBusy(true);
     setFailed(false);
     try {
-      await api.delete("/api/members/" + member.id);
+      await api.delete(
+        demo
+          ? "/api/members/" + member.id
+          : "/api/workspaces/" + member.workspaceId + "/members/" + member.id,
+      );
       await cache.invalidateQueries();
-      setMessage("Participante removido da demonstração.");
+      setMessage(demo ? "Participante removido da demonstração." : "Participante removido.");
     } catch (e) {
       setFailed(true);
       setMessage(handleApiError(e).message);
@@ -55,7 +62,6 @@ export function Teams() {
         title={translate("Equipes")}
         description={translate("Pessoas, responsabilidades e contexto de trabalho.")}
         action={
-          demo ? (
             <button
               className="button"
               aria-expanded={adding}
@@ -64,20 +70,17 @@ export function Teams() {
             >
               {translate("+ Adicionar participante")}{" "}
             </button>
-          ) : undefined
         }
       />
-      {!demo ? (
-        <IntegrationNotice>
-          {translate(
-            "A API atual ainda não oferece gestão de membros. Essa integração precisa ser concluída para adicionar participantes e atribuir permissões reais. A demonstração permite avaliar o fluxo com dados locais.",
-          )}{" "}
-        </IntegrationNotice>
-      ) : (
+      {demo ? (
         <p className="page-note">
           {translate(
             "Equipe de demonstração. Alterações ficam neste navegador; nenhum convite por e-mail é enviado.",
           )}{" "}
+        </p>
+      ) : (
+        <p className="page-note">
+          {translate("Adicione contas já registradas. Convites por e-mail ainda não estão configurados.")}
         </p>
       )}
       {adding && (
@@ -90,17 +93,26 @@ export function Teams() {
             setFailed(false);
             setMessage("");
             try {
-              await api.post("/api/members", {
-                name: name.trim(),
-                email: email.trim(),
-                role,
-                workspaceId: workspace,
-              });
+              if (demo) {
+                await api.post("/api/members", {
+                  name: name.trim(),
+                  email: email.trim(),
+                  role,
+                  workspaceId: workspace,
+                });
+              } else {
+                const apiRole =
+                  role === "Responsável" ? "Manager" : role === "Observador" ? "Observer" : "Member";
+                await api.post("/api/workspaces/" + workspace + "/members", {
+                  email: email.trim(),
+                  role: apiRole,
+                });
+              }
               await cache.invalidateQueries();
               setName("");
               setEmail("");
               setAdding(false);
-              setMessage("Participante adicionado à demonstração.");
+              setMessage(demo ? "Participante adicionado à demonstração." : "Participante adicionado.");
             } catch (e) {
               setFailed(true);
               setMessage(handleApiError(e).message);
@@ -111,7 +123,7 @@ export function Teams() {
         >
           <h2>{translate("Novo participante")}</h2>
           <div className="form-field-grid">
-            <label>
+            {demo && <label>
               {translate("Nome")}{" "}
               <input
                 required
@@ -119,7 +131,7 @@ export function Teams() {
                 onChange={(e) => setName(e.target.value)}
                 maxLength={100}
               />
-            </label>
+            </label>}
             <label>
               {translate("E-mail")}{" "}
               <input
@@ -164,8 +176,7 @@ export function Teams() {
           {failed ? localizeError(message) : translate(message)}
         </p>
       )}
-      {demo && (
-        <>
+      <>
           <div className="toolbar">
             <label className="search">
               {translate("Buscar participante")}{" "}
@@ -211,13 +222,22 @@ export function Teams() {
                       <h2>{m.name}</h2>
                       <p>{m.email}</p>
                       <small>
-                        {q.data?.spaces.find((s) => s.id === m.workspaceId)?.name} ·{" "}
+                        {m.workspaceName || q.data?.spaces.find((s) => s.id === m.workspaceId)?.name} ·{" "}
                         {q.data?.projects.filter((p) => p.workspaceId === m.workspaceId).length ||
                           0}{" "}
                         {translate("projetos do espaço")}{" "}
                       </small>
                     </div>
-                    <span className="badge">{translate(m.role)}</span>
+                    <span className="badge">
+                      {translate(
+                        ({
+                          Owner: "Responsável",
+                          Manager: "Responsável",
+                          Member: "Colaborador",
+                          Observer: "Observador",
+                        } as Record<string, string>)[m.role] || m.role,
+                      )}
+                    </span>
                     <span className="member-load">
                       {(() => {
                         const count =
@@ -230,26 +250,25 @@ export function Teams() {
                         );
                       })()}
                     </span>
-                    <button
+                    {m.role !== "Owner" && <button
                       className="quiet delete"
                       disabled={busy}
                       onClick={() => void remove(m)}
                       aria-label={translate("Remover ") + m.name}
                     >
                       {translate("Remover")}{" "}
-                    </button>
+                    </button>}
                   </article>
                 ))}
               </div>
             ) : (
               <div className="feedback">
                 <h2>{translate("Nenhum participante nesta seleção")}</h2>
-                <p>{translate("Revise a busca ou adicione uma pessoa à demonstração.")}</p>
+                <p>{translate(demo ? "Revise a busca ou adicione uma pessoa à demonstração." : "Revise a busca ou adicione uma pessoa à equipe.")}</p>
               </div>
             )}
           </Feedback>
-        </>
-      )}
+      </>
     </>
   );
 }

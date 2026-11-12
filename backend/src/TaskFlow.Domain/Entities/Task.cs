@@ -14,10 +14,14 @@ public class Task
     public Guid? AssignedToId { get; set; }
     public Guid CreatedById { get; set; }
     public DateTime? DueDate { get; set; }
+    public DateTime? ReminderSentAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
     public Project Project { get; set; } = null!;
     public ICollection<Subtask> Subtasks { get; set; } = new List<Subtask>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<TaskLabel> Labels { get; set; } = new List<TaskLabel>();
+    public ICollection<TaskDependency> Dependencies { get; set; } = new List<TaskDependency>();
+    public ICollection<TaskDependency> Dependents { get; set; } = new List<TaskDependency>();
 }

@@ -10,11 +10,23 @@ export function Reports() {
   useLanguage();
   const q = useWorkData();
   const [workspace, setWorkspace] = useState("");
-  const report = summarizeOverview(q.data?.projects || [], q.data?.tasks || [], workspace);
-  const overdue = report.tasks.filter((t) => isOverdue(t.dueDate, t.status));
-  const rate = report.tasks.length ? Math.round((report.completed / report.tasks.length) * 100) : 0;
+  const [projectId, setProjectId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const base = summarizeOverview(q.data?.projects || [], q.data?.tasks || [], workspace);
+  const filteredProjects = base.progress.filter(({ project }) => !projectId || project.id === projectId);
+  const projectIds = new Set(filteredProjects.map(({ project }) => project.id));
+  const tasks = base.tasks.filter((task) => projectIds.has(task.projectId) && (!from || (task.dueDate || "") >= from) && (!to || (task.dueDate || "") <= to));
+  const done = tasks.filter((task) => completed(task.status)).length;
+  const overdue = tasks.filter((t) => isOverdue(t.dueDate, t.status));
+  const rate = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+  const exportCsv = () => {
+    const quote = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [ ["Tarefa", "Projeto", "Status", "Responsável", "Prazo"], ...tasks.map((task) => [task.title, q.data?.projects.find((p) => p.id === task.projectId)?.name, task.status, task.assignedToName, task.dueDate]) ].map((row) => row.map(quote).join(",")).join("\r\n");
+    const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })); link.download = "taskflow-relatorio.csv"; link.click(); URL.revokeObjectURL(link.href);
+  };
   const workload = new Map<string, { name: string; open: number; done: number }>();
-  for (const t of report.tasks) {
+  for (const t of tasks) {
     const id = t.assignedToId || "unassigned";
     const group = workload.get(id) || {
       name:
@@ -46,12 +58,18 @@ export function Reports() {
           ))}
         </select>
       </label>
+      <div className="report-filters">
+        <label>{translate("Projeto")} <select value={projectId} onChange={(e) => setProjectId(e.target.value)}><option value="">{translate("Todos os projetos")}</option>{base.progress.map(({ project }) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+        <label>{translate("Prazo a partir de")} <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+        <label>{translate("Prazo até")} <input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+        <button className="button secondary" onClick={exportCsv}>{translate("Exportar CSV")}</button>
+      </div>
       <Feedback loading={q.isLoading} error={!!q.error} retry={q.refetch}>
         <div className="metrics overview-metrics">
           {[
-            [translate("Tarefas"), report.tasks.length],
-            [translate("Concluídas"), report.completed],
-            [translate("Taxa de conclusão"), report.tasks.length ? rate + "%" : "—"],
+            [translate("Tarefas"), tasks.length],
+            [translate("Concluídas"), done],
+            [translate("Taxa de conclusão"), tasks.length ? rate + "%" : "—"],
             [translate("Prazo vencido"), overdue.length],
           ].map(([l, v]) => (
             <div className="metric" key={l}>
@@ -63,8 +81,13 @@ export function Reports() {
         <div className="report-grid">
           <section>
             <h2>{translate("Progresso por projeto")}</h2>
-            {report.progress.length ? (
-              report.progress.map(({ project, total, completed, percent }) => (
+            {filteredProjects.length ? (
+              filteredProjects.map(({ project }) => {
+                const selected = tasks.filter((task) => task.projectId === project.id);
+                const completedCount = selected.filter((task) => completed(task.status)).length;
+                const total = selected.length;
+                const percent = total ? Math.round(completedCount / total * 100) : 0;
+                return (
                 <Link
                   className="report-project"
                   to={"/tasks?projectId=" + project.id}
@@ -73,7 +96,7 @@ export function Reports() {
                   <strong>{project.name}</strong>
                   <span>
                     {total
-                      ? completed +
+                      ? completedCount +
                         translate(" de ") +
                         total +
                         translate(" concluídas · ") +
@@ -94,14 +117,14 @@ export function Reports() {
                     </div>
                   )}
                 </Link>
-              ))
+              ); })
             ) : (
               <p className="feedback">{translate("Nenhum projeto neste espaço.")}</p>
             )}
           </section>
           <section>
             <h2>{translate("Distribuição de tarefas")}</h2>
-            {workload.size ? (
+            {(() => { workload.clear(); for (const task of tasks) { const id = task.assignedToId || "unassigned"; const group = workload.get(id) || { name: task.assignedToName || translate("Sem responsável"), open: 0, done: 0 }; if (completed(task.status)) group.done++; else group.open++; workload.set(id, group); } return workload.size ? (
               <div className="workload-list">
                 {[...workload].map(([id, w]) => (
                   <div key={id}>
@@ -114,7 +137,7 @@ export function Reports() {
               </div>
             ) : (
               <p className="feedback">{translate("Nenhuma tarefa para analisar.")}</p>
-            )}
+            ); })()}
             <p className="page-note">
               {translate(
                 "Participantes sem tarefas não entram nesta distribuição. Não há estimativa automática de horas ou produtividade.",

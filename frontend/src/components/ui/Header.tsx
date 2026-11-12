@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { isDemo } from "@/services/demo";
+import { NotificationCenter } from "@/components/ui/NotificationCenter";
 const labels: Record<string, string> = {
   tasks: "Tarefas",
   projects: "Projetos",
@@ -53,6 +54,7 @@ export function Header() {
         <button className="quiet">{translate("Buscar")}</button>
       </form>
       <div className="topbar-actions">
+        <NotificationCenter />
         <LanguageSelector />
         {isDemo() && (
           <span className="demo-label">{translate("Demonstração · dados fictícios")}</span>

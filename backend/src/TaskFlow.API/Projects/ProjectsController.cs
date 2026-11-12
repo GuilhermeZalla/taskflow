@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Application.Commands.Projects;
 using TaskFlow.Application.DTOs;
+using TaskFlow.API.Collaboration;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.API.Projects;
@@ -16,11 +17,13 @@ public class ProjectsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IMediator _mediator;
+    private readonly ActivityRecorder _activityRecorder;
 
-    public ProjectsController(AppDbContext context, IMediator mediator)
+    public ProjectsController(AppDbContext context, IMediator mediator, ActivityRecorder activityRecorder)
     {
         _context = context;
         _mediator = mediator;
+        _activityRecorder = activityRecorder;
     }
 
     [HttpGet]
@@ -68,6 +71,9 @@ public class ProjectsController : ControllerBase
         try
         {
             var result = await _mediator.Send(new CreateProjectCommand(dto, userId), cancellationToken);
+            await _activityRecorder.RecordAsync(
+                result.WorkspaceId, result.Id, null, userId, "projects", result.Id.ToString(), result.Name,
+                "criado", cancellationToken);
             return Created($"/api/projects/{result.Id}", result);
         }
         catch (KeyNotFoundException ex)
@@ -118,6 +124,9 @@ public class ProjectsController : ControllerBase
         try
         {
             var result = await _mediator.Send(new UpdateProjectCommand(id, dto.Name, dto.Description, dto.Status, dto.StartDate, dto.DueDate, userId), cancellationToken);
+            await _activityRecorder.RecordAsync(
+                result.WorkspaceId, id, null, userId, "projects", id.ToString(), result.Name,
+                "atualizado", cancellationToken);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -138,7 +147,19 @@ public class ProjectsController : ControllerBase
 
         try
         {
+            var project = await _context.Projects
+                .Where(item => item.Id == id)
+                .Select(item => new { item.WorkspaceId, item.Name })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (project is null)
+            {
+                return NotFound();
+            }
+
             await _mediator.Send(new DeleteProjectCommand(id, userId), cancellationToken);
+            await _activityRecorder.RecordAsync(
+                project.WorkspaceId, null, null, userId, "projects", id.ToString(), project.Name,
+                "excluído", cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException ex)

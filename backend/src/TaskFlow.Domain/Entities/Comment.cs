@@ -13,4 +13,5 @@ public class Comment
     public DateTime? UpdatedAt { get; set; }
 
     public Task Task { get; set; } = null!;
+    public ICollection<CommentMention> Mentions { get; set; } = new List<CommentMention>();
 }

@@ -95,12 +95,25 @@ export type DemoMember = {
   email: string;
   role: string;
   workspaceId: string;
+  workspaceName?: string;
 };
 export type DemoActivity = {
   id: string;
   resource: string;
   title: string;
   action: string;
+  createdAt: string;
+  actorName?: string;
+};
+export type UserNotification = {
+  id: string;
+  workspaceId: string;
+  projectId?: string | null;
+  taskId?: string | null;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
   createdAt: string;
 };
 const seedMembers: DemoMember[] = [
@@ -164,11 +177,17 @@ export async function demoAdapter(config: any) {
   db["members"] ??= seedMembers.map((m) => ({ ...m }));
   db["activities"] ??= [];
   const [kind, id] = (config.url || "").replace("/api/", "").split("/");
-  if (!["workspaces", "projects", "tasks", "members", "activities"].includes(kind) || !db[kind])
+  if (!["workspaces", "projects", "tasks", "members", "activities", "notifications"].includes(kind))
     throw new Error("Recurso indisponível na demonstração.");
+  db["notifications"] ??= [];
   const method = (config.method || "get").toLowerCase();
   const body = typeof config.data === "string" ? JSON.parse(config.data) : config.data;
   if (kind === "activities" && method !== "get") throw new Error("O histórico é somente leitura.");
+  if (kind === "notifications" && id === "read-all" && method === "put") {
+    for (const notification of db[kind]!) notification["isRead"] = true;
+    localStorage.setItem(key, JSON.stringify(db));
+    return { data: null, status: 204, statusText: "No Content", headers: {}, config };
+  }
   let data: any = db[kind];
   let previous: any;
   if (id) {

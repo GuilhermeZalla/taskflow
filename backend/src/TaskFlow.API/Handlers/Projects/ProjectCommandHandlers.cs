@@ -21,11 +21,13 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         var workspace = await _context.Workspaces.FindAsync([request.Dto.WorkspaceId], cancellationToken)
             ?? throw new KeyNotFoundException("Workspace não encontrado.");
 
-        var isMember = await _context.WorkspaceMembers.AnyAsync(wm =>
-            wm.WorkspaceId == request.Dto.WorkspaceId && wm.UserId == request.UserId, cancellationToken);
+        var workspaceRole = await _context.WorkspaceMembers
+            .Where(member => member.WorkspaceId == request.Dto.WorkspaceId && member.UserId == request.UserId)
+            .Select(member => member.Role)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!isMember && workspace.OwnerId != request.UserId)
-            throw new UnauthorizedAccessException("Você não tem acesso a este workspace.");
+        if (workspaceRole is not ("Owner" or "Manager"))
+            throw new UnauthorizedAccessException("Apenas proprietários e gerentes podem criar projetos.");
 
         var project = new Project
         {
@@ -40,15 +42,22 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 
         _context.Projects.Add(project);
 
-        var member = new ProjectMember
+        var workspaceMembers = await _context.WorkspaceMembers
+            .Where(member => member.WorkspaceId == workspace.Id)
+            .Select(member => new { member.UserId, member.Role })
+            .ToListAsync(cancellationToken);
+        if (workspaceMembers.All(member => member.UserId != request.UserId))
+        {
+            workspaceMembers.Add(new { UserId = request.UserId, Role = "Owner" });
+        }
+
+        _context.ProjectMembers.AddRange(workspaceMembers.Select(member => new ProjectMember
         {
             ProjectId = project.Id,
-            UserId = request.UserId,
-            Role = "Owner",
+            UserId = member.UserId,
+            Role = member.Role,
             JoinedAt = DateTime.UtcNow
-        };
-
-        _context.ProjectMembers.Add(member);
+        }));
         await _context.SaveChangesAsync(cancellationToken);
 
         return new ProjectDto
@@ -62,7 +71,7 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
             StartDate = project.StartDate,
             DueDate = project.DueDate,
             CreatedAt = project.CreatedAt,
-            MemberCount = 1,
+            MemberCount = workspaceMembers.Count,
             TaskCount = 0
         };
     }
@@ -82,11 +91,13 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         var project = await _context.Projects.FindAsync([request.Id], cancellationToken)
             ?? throw new KeyNotFoundException("Projeto não encontrado.");
 
-        var isMember = await _context.ProjectMembers.AnyAsync(pm =>
-            pm.ProjectId == request.Id && pm.UserId == request.UserId, cancellationToken);
+        var role = await _context.ProjectMembers
+            .Where(member => member.ProjectId == request.Id && member.UserId == request.UserId)
+            .Select(member => member.Role)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!isMember)
-            throw new UnauthorizedAccessException("Você não tem acesso a este projeto.");
+        if (role is not ("Owner" or "Manager"))
+            throw new UnauthorizedAccessException("Apenas proprietários e gerentes podem editar projetos.");
 
         project.Name = request.Name;
         project.Description = request.Description;
@@ -131,11 +142,12 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
         var project = await _context.Projects.FindAsync([request.Id], cancellationToken)
             ?? throw new KeyNotFoundException("Projeto não encontrado.");
 
-        var isOwner = await _context.ProjectMembers.AnyAsync(pm =>
-            pm.ProjectId == request.Id && pm.UserId == request.UserId && pm.Role == "Owner", cancellationToken);
+        var canDelete = await _context.ProjectMembers.AnyAsync(member =>
+            member.ProjectId == request.Id && member.UserId == request.UserId &&
+            (member.Role == "Owner" || member.Role == "Manager"), cancellationToken);
 
-        if (!isOwner)
-            throw new UnauthorizedAccessException("Apenas o proprietário pode excluir este projeto.");
+        if (!canDelete)
+            throw new UnauthorizedAccessException("Apenas proprietários e gerentes podem excluir projetos.");
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync(cancellationToken);

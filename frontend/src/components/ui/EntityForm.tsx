@@ -7,6 +7,7 @@ import { api, handleApiError } from "@/services/api";
 import { PageHeading, Feedback } from "./Shared";
 import { isDemo, type DemoMember } from "@/services/demo";
 import { dateInput } from "@/features/work/workflow";
+import { TaskCollaboration } from "./TaskCollaboration";
 type RecordData = {
   name?: string;
   title?: string;
@@ -62,12 +63,14 @@ export function EntityForm({ kind }: { kind: "workspaces" | "projects" | "tasks"
     enabled: !space,
     retry: 1,
     queryFn: async () =>
-      (await api.get<Array<{ id: string; name: string }>>("/api/" + parentKind)).data,
+      (await api.get<Array<{ id: string; name: string; workspaceId?: string }>>("/api/" + parentKind)).data,
   });
+  const selectedWorkspaceId = task ? parents.data?.find((project) => project.id === parent)?.workspaceId : undefined;
   const members = useQuery({
-    queryKey: ["demo-members"],
-    enabled: task && isDemo(),
-    queryFn: async () => (await api.get<DemoMember[]>("/api/members")).data,
+    queryKey: ["workspace-members", selectedWorkspaceId],
+    enabled: task && !!selectedWorkspaceId,
+    queryFn: async () =>
+      (await api.get<DemoMember[]>("/api/members", { params: { workspaceId: selectedWorkspaceId } })).data,
   });
   const label = task
     ? translate("tarefa")
@@ -281,9 +284,9 @@ export function EntityForm({ kind }: { kind: "workspaces" | "projects" | "tasks"
                       onChange={(e) => setDue(e.target.value)}
                     />
                   </label>
-                  {task && isDemo() && (
+                  {task && selectedWorkspaceId && (
                     <label>
-                      {translate("Responsável")} <small>{translate("demonstração local")}</small>
+                      {translate("Responsável")} {isDemo() && <small>{translate("demonstração local")}</small>}
                       <select value={assigned} onChange={(e) => setAssigned(e.target.value)}>
                         <option value="">{translate("Sem responsável")}</option>
                         {members.data?.map((m) => (
@@ -340,16 +343,10 @@ export function EntityForm({ kind }: { kind: "workspaces" | "projects" | "tasks"
                 "Descreva o resultado esperado. Datas e status atualizados alimentam a visão geral, o calendário e os relatórios.",
               )}{" "}
             </p>
-            {task && !isDemo() && (
-              <p>
-                {translate(
-                  "A atribuição de responsáveis será disponibilizada com a integração de membros. A atribuição existente é preservada ao editar.",
-                )}{" "}
-              </p>
-            )}
           </aside>
         </div>
       </Feedback>
+      {task && id && record.data && <TaskCollaboration taskId={id} projectId={record.data.projectId || ""} />}
     </>
   );
 }
