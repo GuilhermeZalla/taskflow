@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test src/services/demo.test.mjs src/features/dashboard/overview.test.mjs src/features/projects/project-list.test.mjs src/features/work/workflow.test.mjs src/i18n/core.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",

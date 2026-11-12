@@ -45,7 +45,7 @@ export interface WorkspaceMember {
   joinedAt: string;
 }
 
-export type WorkspaceMemberRole = 'owner' | 'admin' | 'member';
+export type WorkspaceMemberRole = "owner" | "admin" | "member";
 
 // ===== Project Types =====
 
@@ -69,9 +69,9 @@ export interface ProjectMember {
   joinedAt: string;
 }
 
-export type ProjectStatus = 'planning' | 'in_progress' | 'review' | 'completed' | 'cancelled';
+export type ProjectStatus = "planning" | "in_progress" | "review" | "completed" | "cancelled";
 
-export type ProjectMemberRole = 'owner' | 'admin' | 'member' | 'viewer';
+export type ProjectMemberRole = "owner" | "admin" | "member" | "viewer";
 
 // ===== Task Types =====
 
@@ -82,16 +82,17 @@ export interface Task {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
-  assignedToId: string;
+  assignedToId: string | null;
+  assignedToName?: string | null;
   createdById: string;
   dueDate: string;
   createdAt: string;
   updatedAt?: string;
 }
 
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
+export type TaskStatus = "todo" | "in_progress" | "review" | "done";
 
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Subtask {
   id: string;
@@ -114,8 +115,8 @@ export interface Comment {
 
 // ===== Activity Types =====
 
-export type EntityType = 'workspace' | 'project' | 'task' | 'comment' | 'subtask';
-export type ActionType = 'created' | 'updated' | 'deleted' | 'assigned' | 'completed';
+export type EntityType = "workspace" | "project" | "task" | "comment" | "subtask";
+export type ActionType = "created" | "updated" | "deleted" | "assigned" | "completed";
 
 export interface Activity {
   id: string;
