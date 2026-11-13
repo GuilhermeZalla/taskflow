@@ -95,22 +95,24 @@ export function Calendar() {
             {translate("Hoje")}{" "}
           </button>
         </div>
-        <label>
-          {translate("Exibir")}{" "}
-          <select value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="all">{translate("Projetos e tarefas")}</option>
-            <option value="task">{translate("Tarefas")}</option>
-            <option value="project">{translate("Projetos")}</option>
-          </select>
-        </label>
-        <label className="check-label">
-          <input
-            type="checkbox"
-            checked={includeDone}
-            onChange={(e) => setIncludeDone(e.target.checked)}
-          />
-          {translate("Incluir concluídos")}{" "}
-        </label>
+        <div className="calendar-filters">
+          <label className="calendar-kind">
+            {translate("Exibir")}{" "}
+            <select value={kind} onChange={(e) => setKind(e.target.value)}>
+              <option value="all">{translate("Projetos e tarefas")}</option>
+              <option value="task">{translate("Tarefas")}</option>
+              <option value="project">{translate("Projetos")}</option>
+            </select>
+          </label>
+          <label className="check-label calendar-include-done">
+            <input
+              type="checkbox"
+              checked={includeDone}
+              onChange={(e) => setIncludeDone(e.target.checked)}
+            />
+            {translate("Incluir concluídos")}{" "}
+          </label>
+        </div>
       </div>
       <Feedback loading={q.isLoading} error={!!q.error} retry={q.refetch}>
         <div className="calendar-layout">

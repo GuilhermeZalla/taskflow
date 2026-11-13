@@ -1905,9 +1905,22 @@ textarea {
 .month-navigation .button {
   padding: 8px 12px;
 }
+.calendar-filters {
+  display: flex;
+  align-items: end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
 .calendar-toolbar label {
   font-size: 11px;
   font-weight: 500;
+}
+.calendar-kind {
+  min-width: 190px;
+}
+.calendar-include-done {
+  min-height: 38px;
+  white-space: nowrap;
 }
 .check-label {
   display: flex;
@@ -3213,7 +3226,11 @@ button.button {
     align-items: flex-start;
     gap: 14px;
   }
-  .calendar-toolbar > label {
+  .calendar-filters {
+    width: 100%;
+    gap: 12px 20px;
+  }
+  .calendar-kind {
     min-width: min(100%, 190px);
   }
   .calendar-toolbar select {
@@ -3311,7 +3328,7 @@ button.button {
     grid-template-columns: minmax(84px, 0.38fr) minmax(0, 1fr);
     gap: 8px;
   }
-  .calendar-toolbar > label {
+  .calendar-filters {
     width: 100%;
   }
   .month-navigation {

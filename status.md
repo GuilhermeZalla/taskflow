@@ -1,5 +1,11 @@
 # TaskFlow — Status atual (13/11/2026)
 
+## Ajustes após a release 1.1.0 — 13/11/2026
+
+- Calendário: os filtros "Exibir" e "Incluir concluídos" foram agrupados e alinhados, com quebra responsiva em telas menores. O build do frontend passou; a aparência final ainda precisa ser conferida no navegador pelo titular.
+- Pendência funcional: confirmar no Mailtrap Sandbox o recebimento de uma notificação externa de atribuição, menção ou prazo.
+- Etapa futura: hospedagem pública, incluindo servidor/domínio, HTTPS, segredos, logs, backups, restauração e conferência da licença MediatR para produção.
+
 ## Implementação local da versão 1.1 — 13/11/2026
 
 - **Confirmação e recuperação de conta:** cadastro envia confirmação, login permite contas não confirmadas, mas a API bloqueia os dados do workspace até a confirmação. A Visão geral mostra o aviso, reenvio e verificação da confirmação; Preferências permanece acessível. Há redefinição de senha por link. O titular confirmou o recebimento e o funcionamento dos fluxos de confirmação e redefinição no ambiente local.
