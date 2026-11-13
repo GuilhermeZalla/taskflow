@@ -15,7 +15,7 @@
 - [ ] Conferir o envio de notificações externas na caixa de entrada do Mailtrap Sandbox. Não enviar credenciais por chat ou armazená-las no repositório.
 - [x] Aplicar a migration e validar confirmação de conta e redefinição de senha no ambiente local com MySQL. Contas existentes poderão entrar, mas precisarão confirmar o e-mail para acessar dados do workspace.
 - [x] Fazer uma instalação limpa em diretório/ambiente novo e validar as instruções do README; o titular confirmou que concluiu e funcionou.
-- [ ] Publicar a release `v1.1.0` com o estado de validação documentado.
+- [x] Release `v1.1.0` publicada no GitHub com o estado de validação documentado: https://github.com/GuilhermeZalla/taskflow-platform/releases/tag/v1.1.0
 
 ## Etapa futura: hospedagem pública
 

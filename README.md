@@ -220,7 +220,7 @@ The screenshots and GIFs in this README verify the presentation and flows shown 
 
 ## Current status and next steps
 
-Version 1.1 email workflows include account confirmation and recovery, workspace invitations, and opt-in external notifications. Unconfirmed accounts can sign in, resend confirmation, check their status, and use account preferences; the API blocks workspace resources until confirmation. The `AddEmailWorkflows` MySQL migration is applied to the local database, and a clean installation was confirmed by the project owner. The project owner confirmed Mailtrap Sandbox delivery for account confirmation, password reset, and workspace invitations. External notification delivery still needs a manual Sandbox check.
+[Version 1.1.0](https://github.com/GuilhermeZalla/taskflow-platform/releases/tag/v1.1.0) is published for local execution. Its email workflows include account confirmation and recovery, workspace invitations, and opt-in external notifications. Unconfirmed accounts can sign in, resend confirmation, check their status, and use account preferences; the API blocks workspace resources until confirmation. The `AddEmailWorkflows` MySQL migration is applied to the local database, and a clean installation was confirmed by the project owner. The project owner confirmed Mailtrap Sandbox delivery for account confirmation, password reset, and workspace invitations. External notification delivery still needs a manual Sandbox check.
 
 See [status.md](status.md) for validations and remaining work. Public hosting, HTTPS, production backups, and a production license for MediatR remain a separate future phase. The project is a responsive web application and has no native app.
 
