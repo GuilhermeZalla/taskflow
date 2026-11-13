@@ -132,7 +132,7 @@ Email messages are stored in an encrypted database outbox and sent by a backgrou
 
 Port 587 uses STARTTLS by default. For a provider that requires implicit TLS on port 465, set `$env:Email__Smtp__UseSslOnConnect = 'true'` in the API terminal.
 
-The `AddEmailWorkflows` migration is applied to the local MySQL database. Email confirmation is now required for login, so each existing account must confirm its address once. Delivery through the Mailtrap Sandbox has been verified for account confirmation and password reset. Invitation and external notification emails still need to be checked in the Sandbox. Sandbox testing does not verify delivery to real recipients.
+The `AddEmailWorkflows` migration is applied to the local MySQL database. Existing accounts can sign in before confirming their address, but cannot access workspace data until confirmation. Mailtrap Sandbox delivery has been verified for account confirmation, password reset, and invitations. External notification email delivery remains to be checked in the Sandbox. Sandbox testing does not verify delivery to real recipients.
 
 The command above explicitly uses port 5080 to match the frontend's default HTTP client URL. The original HTTP profile in `launchSettings.json` uses port 5171; if you choose that profile, configure the frontend to use the same address.
 
@@ -145,13 +145,13 @@ npm.cmd ci --prefix frontend
 npm.cmd run dev --prefix frontend
 ```
 
-Open `http://localhost:5173`, create an account, and sign in. To change the API URL, create or edit `frontend/.env` with `VITE_API_URL=http://127.0.0.1:5080`, then restart Vite. The client uses this address by default when the variable is not set; the frontend `.env.example` contains a different example address, which must be adjusted if you copy it.
+Open `http://localhost:5173`, create an account, and sign in. To change the API URL, create or edit `frontend/.env` with `VITE_API_URL=http://127.0.0.1:5080`, then restart Vite. The client uses this address by default when the variable is not set; the frontend `.env.example` uses the same local API address.
 
 Frontend requests go directly to the API, so the Vite origin must be allowed by CORS. To stop each server, press `Ctrl+C` in its terminal. The .NET SDK 11 alone does not replace the ASP.NET Core 10 runtime required by the project.
 
 ## Authentication and interface
 
-The API uses ASP.NET Core Identity. The registration form sends a name, email, and password to `POST /api/auth/register`; a confirmation link must be used before login. Password recovery uses the Identity email flow. Login uses `POST /login`; the frontend stores the returned `accessToken` in the browser and sends it as `Authorization: Bearer`. Signing out removes the local token; resource access permissions are checked by the backend.
+The API uses ASP.NET Core Identity. The registration form sends a name, email, and password to `POST /api/auth/register`; a confirmation link is sent after registration. Users can sign in before confirming their email, but workspace resources remain unavailable until confirmation. The overview shows a confirmation notice and a resend action; account preferences remain accessible. Password recovery uses the Identity email flow. Login uses `POST /login`; the frontend stores the returned `accessToken` in the browser and sends it as `Authorization: Bearer`. Signing out removes the local token; resource access permissions are checked by the backend.
 
 The form supports showing and hiding the password, validation, and submission feedback. Registration requires a password of at least eight characters, including uppercase letters, lowercase letters, and numbers. Internal pages share navigation, loading, error, and empty states, with a visual identity based on forest green and paper tones.
 
@@ -220,7 +220,7 @@ The screenshots and GIFs in this README verify the presentation and flows shown 
 
 ## Current status and next steps
 
-Version 1.1 email workflows are implemented locally: account confirmation and recovery, workspace invitations, and opt-in external notifications. The `AddEmailWorkflows` MySQL migration is applied to the local database, and a clean installation was confirmed by the project owner. Mailtrap Sandbox delivery was confirmed for account confirmation and password reset; invitation and external notification emails still need validation before the 1.1 release.
+Version 1.1 email workflows include account confirmation and recovery, workspace invitations, and opt-in external notifications. Unconfirmed accounts can sign in, resend confirmation, check their status, and use account preferences; the API blocks workspace resources until confirmation. The `AddEmailWorkflows` MySQL migration is applied to the local database, and a clean installation was confirmed by the project owner. The project owner confirmed Mailtrap Sandbox delivery for account confirmation, password reset, and workspace invitations. External notification delivery still needs a manual Sandbox check.
 
 See [status.md](status.md) for validations and remaining work. Public hosting, HTTPS, production backups, and a production license for MediatR remain a separate future phase. The project is a responsive web application and has no native app.
 

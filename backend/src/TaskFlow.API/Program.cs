@@ -39,7 +39,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options =>
 {
     options.User.RequireUniqueEmail = true;
-    options.SignIn.RequireConfirmedEmail = true;
+    options.SignIn.RequireConfirmedEmail = false;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -118,6 +118,33 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api") &&
+        context.Request.Path != "/api/auth/me" &&
+        context.Request.Path != "/api/auth/language" &&
+        context.Request.Path != "/api/auth/email-notifications" &&
+        !context.Request.Path.StartsWithSegments("/api/health") &&
+        context.User.Identity?.IsAuthenticated == true)
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? context.User.FindFirstValue("sub");
+        var userManager = context.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var account = userId is null ? null : await userManager.FindByIdAsync(userId);
+        if (account is null)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+        if (!account.EmailConfirmed)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { detail = "Confirme seu e-mail para acessar o espaço de trabalho." });
+            return;
+        }
+    }
+    await next();
+});
 app.UseAuthorization();
 
 // Endpoint de saúde

@@ -31,7 +31,7 @@ public sealed class EmailWorkflowTests
             email = "email-user@example.com",
             password = "StrongPassword123"
         });
-        Assert.Equal(HttpStatusCode.Unauthorized, pendingLogin.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, pendingLogin.StatusCode);
 
         var resendConfirmation = await client.PostAsJsonAsync("/resendConfirmationEmail", new
         {

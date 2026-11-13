@@ -12,7 +12,7 @@ const items = [
   ["/activity", "Atividade", "activity"],
   ["/reports", "Relatórios", "report"],
 ];
-export function Sidebar() {
+export function Sidebar({ restricted = false }: { restricted?: boolean }) {
   useLanguage();
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -40,7 +40,7 @@ export function Sidebar() {
         aria-label={translate("Navegação principal")}
         className={open ? "mobile-open" : ""}
       >
-        {items.map(([path, label, icon]) => (
+        {(restricted ? items.slice(0, 1) : items).map(([path, label, icon]) => (
           <NavLink key={path} to={path!} end={path === "/"} onClick={() => setOpen(false)}>
             <svg
               width="18"

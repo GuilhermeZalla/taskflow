@@ -27,9 +27,16 @@ public class AuthenticationAndWorkspaceTests
             email = "taylor@example.com",
             password = "StrongPassword123"
         });
-        Assert.Equal(HttpStatusCode.Unauthorized, unconfirmedLogin.StatusCode);
-
+        Assert.Equal(HttpStatusCode.OK, unconfirmedLogin.StatusCode);
+        using var pendingBody = JsonDocument.Parse(await unconfirmedLogin.Content.ReadAsStringAsync());
+        var pendingToken = pendingBody.RootElement.GetProperty("accessToken").GetString();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pendingToken);
+        var pendingProfile = await client.GetFromJsonAsync<JsonElement>("/api/auth/me");
+        Assert.False(pendingProfile.GetProperty("emailConfirmed").GetBoolean());
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/workspaces")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/workspaces", new { name = "Blocked" })).StatusCode);
         await factory.ConfirmEmailAsync("taylor@example.com");
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/workspaces")).StatusCode);
 
         var login = await client.PostAsJsonAsync("/login", new
         {

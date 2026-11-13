@@ -16,7 +16,7 @@ const labels: Record<string, string> = {
   reports: "Relatórios",
   settings: "Preferências",
 };
-export function Header() {
+export function Header({ restricted = false }: { restricted?: boolean }) {
   useLanguage();
   const location = useLocation(),
     navigate = useNavigate(),
@@ -30,7 +30,7 @@ export function Header() {
         <span className="crumb">/</span>
         <strong>{translate(label || "")}</strong>
       </span>
-      <form
+      {!restricted && <form
         className="header-search"
         role="search"
         onSubmit={(e) => {
@@ -52,9 +52,9 @@ export function Header() {
           placeholder={translate("Buscar tarefas…")}
         />
         <button className="quiet">{translate("Buscar")}</button>
-      </form>
+      </form>}
       <div className="topbar-actions">
-        <NotificationCenter />
+        {!restricted && <NotificationCenter />}
         <LanguageSelector />
         {isDemo() && (
           <span className="demo-label">{translate("Demonstração · dados fictícios")}</span>

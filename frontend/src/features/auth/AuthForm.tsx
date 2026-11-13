@@ -61,7 +61,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             try {
               if (register) {
                 await api.post("/api/auth/register", { fullName, email, password });
-                setMessage("Conta criada. Confirme seu e-mail pelo link enviado antes de entrar.");
+                setMessage("Conta criada. Entre para acompanhar a confirmação do seu e-mail.");
                 setFullName("");
                 setPassword("");
                 setConfirm("");
@@ -79,7 +79,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               const apiError = handleApiError(e);
               setError(
                 !register && apiError.status === 401
-                  ? translate("Não foi possível entrar. Confira seus dados e confirme seu e-mail.")
+                  ? translate("Não foi possível entrar. Confira seu e-mail e sua senha.")
                   : apiError.message,
               );
             } finally {
@@ -186,7 +186,6 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           {!register && (
             <p className="auth-switch auth-recovery-links">
               <Link to="/forgot-password">{translate("Esqueci minha senha")}</Link>
-              <Link to="/resend-confirmation">{translate("Reenviar confirmação de e-mail")}</Link>
             </p>
           )}
           <div className="demo-entry">
