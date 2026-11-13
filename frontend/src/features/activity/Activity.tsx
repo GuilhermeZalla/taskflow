@@ -44,7 +44,7 @@ export function Activity() {
       </p>
       <div className="toolbar">
         <label className="search">
-          {translate("Buscar atividade")} {" "}
+          <span>{translate("Buscar atividade")}</span>
           <input
             type="search"
             value={search}

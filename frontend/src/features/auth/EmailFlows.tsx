@@ -6,10 +6,10 @@ import { useLanguage } from "@/i18n/react";
 
 const pendingInvitationKey = "taskflow.pendingInvitation";
 
-function EmailFlowLayout({ children }: { children: ReactNode }) {
+function EmailFlowLayout({ children, className = "" }: { children: ReactNode; className?: string }) {
   useLanguage();
   return (
-    <div className="auth-shell email-flow-shell">
+    <div className={`auth-shell email-flow-shell ${className}`.trim()}>
       <main className="auth-form-area">
         <section className="auth-form">
           <Link className="brand" to="/login">
@@ -19,6 +19,17 @@ function EmailFlowLayout({ children }: { children: ReactNode }) {
         </section>
       </main>
     </div>
+  );
+}
+
+function EmailFlowReturnLink() {
+  return (
+    <p className="auth-switch email-flow-return">
+      <Link className="button secondary email-flow-back" to="/login">
+        <span aria-hidden="true">←</span>
+        {translate("Voltar para entrar")}
+      </Link>
+    </p>
   );
 }
 
@@ -99,20 +110,20 @@ export function ForgotPassword() {
   }
 
   return (
-    <EmailFlowLayout>
+    <EmailFlowLayout className="email-flow-login-type">
       <p className="eyebrow">{translate("ACESSO À CONTA")}</p>
       <h2>{translate("Redefinir senha")}</h2>
       <p className="muted">{translate("Informe seu e-mail e enviaremos um link para criar uma nova senha.")}</p>
       {sent ? (
         <p className="success" role="status">{translate("Se a conta existir, enviaremos um link de redefinição.")}</p>
       ) : (
-        <form onSubmit={submit}>
+        <form className="email-flow-form" onSubmit={submit}>
           <label>{translate("E-mail")}<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           {error && <p className="error" role="alert">{localizeError(error)}</p>}
           <button className="button" disabled={busy}>{busy ? translate("Aguarde…") : translate("Enviar link")}</button>
         </form>
       )}
-      <p className="auth-switch"><Link to="/login">{translate("Voltar para entrar")}</Link></p>
+      <EmailFlowReturnLink />
     </EmailFlowLayout>
   );
 }
@@ -138,19 +149,20 @@ export function ResendConfirmation() {
   }
 
   return (
-    <EmailFlowLayout>
+    <EmailFlowLayout className="email-flow-login-type">
       <p className="eyebrow">{translate("CONFIRMAÇÃO DE E-MAIL")}</p>
       <h2>{translate("Enviar confirmação novamente")}</h2>
+      <p className="muted">{translate("Informe seu e-mail e enviaremos um novo link de confirmação.")}</p>
       {sent ? (
         <p className="success" role="status">{translate("Se a conta estiver aguardando confirmação, enviaremos outro link.")}</p>
       ) : (
-        <form onSubmit={submit}>
+        <form className="email-flow-form" onSubmit={submit}>
           <label>{translate("E-mail")}<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           {error && <p className="error" role="alert">{localizeError(error)}</p>}
           <button className="button" disabled={busy}>{busy ? translate("Aguarde…") : translate("Enviar link")}</button>
         </form>
       )}
-      <p className="auth-switch"><Link to="/login">{translate("Voltar para entrar")}</Link></p>
+      <EmailFlowReturnLink />
     </EmailFlowLayout>
   );
 }
@@ -205,7 +217,7 @@ export function ResetPassword() {
           <Link className="button" to="/login">{translate("Entrar")}</Link>
         </>
       ) : (
-        <form onSubmit={submit}>
+        <form className="email-flow-form" onSubmit={submit}>
           <label>{translate("Nova senha")}<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           <label>{translate("Confirmar senha")}<input type="password" autoComplete="new-password" minLength={8} required value={confirm} onChange={(event) => setConfirm(event.target.value)} /></label>
           <small className="muted">{translate("Use pelo menos 8 caracteres, com maiúsculas, minúsculas e números.")}</small>

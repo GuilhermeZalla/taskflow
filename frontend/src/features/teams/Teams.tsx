@@ -257,7 +257,7 @@ export function Teams() {
       <>
           <div className="toolbar">
             <label className="search">
-              {translate("Buscar participante")}{" "}
+              <span>{translate("Buscar participante")}</span>
               <input
                 type="search"
                 value={search}
