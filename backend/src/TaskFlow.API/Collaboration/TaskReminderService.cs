@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskFlow.API.Email;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -33,6 +34,7 @@ public sealed class TaskReminderService(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var notificationEmails = scope.ServiceProvider.GetRequiredService<ExternalNotificationEmailService>();
         var now = DateTime.UtcNow;
         var cutoff = now.AddHours(24);
         var upcomingTasks = await context.Tasks
@@ -67,6 +69,13 @@ public sealed class TaskReminderService(
         if (upcomingTasks.Count > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
+            var reminders = context.Notifications.Local
+                .Where(notification => notification.Type == "deadline" && notification.CreatedAt == now)
+                .ToArray();
+            foreach (var notification in reminders)
+            {
+                await notificationEmails.QueueAsync(notification, cancellationToken);
+            }
         }
     }
 }

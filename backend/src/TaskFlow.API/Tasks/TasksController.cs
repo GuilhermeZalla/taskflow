@@ -8,6 +8,7 @@ using TaskFlow.Application.DTOs;
 using TaskFlow.API.Collaboration;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
+using TaskFlow.API.Email;
 
 namespace TaskFlow.API.Tasks;
 
@@ -19,12 +20,18 @@ public class TasksController : ControllerBase
     private readonly AppDbContext _context;
     private readonly IMediator _mediator;
     private readonly ActivityRecorder _activityRecorder;
+    private readonly ExternalNotificationEmailService _notificationEmails;
 
-    public TasksController(AppDbContext context, IMediator mediator, ActivityRecorder activityRecorder)
+    public TasksController(
+        AppDbContext context,
+        IMediator mediator,
+        ActivityRecorder activityRecorder,
+        ExternalNotificationEmailService notificationEmails)
     {
         _context = context;
         _mediator = mediator;
         _activityRecorder = activityRecorder;
+        _notificationEmails = notificationEmails;
     }
 
     [HttpGet]
@@ -236,7 +243,7 @@ public class TasksController : ControllerBase
             return;
         }
 
-        _context.Notifications.Add(new Notification
+        var notification = new Notification
         {
             UserId = assigneeId.Value,
             WorkspaceId = workspaceId,
@@ -246,7 +253,9 @@ public class TasksController : ControllerBase
             Message = taskTitle,
             Type = "assignment",
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        _context.Notifications.Add(notification);
         await _context.SaveChangesAsync(cancellationToken);
+        await _notificationEmails.QueueAsync(notification, cancellationToken);
     }
 }

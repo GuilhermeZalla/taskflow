@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Domain.Entities;
+using TaskFlow.API.Email;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.API.Collaboration;
@@ -14,7 +15,8 @@ namespace TaskFlow.API.Collaboration;
 public sealed class WorkspaceMembersController(
     AppDbContext context,
     UserManager<ApplicationUser> userManager,
-    ActivityRecorder activityRecorder) : ControllerBase
+    ActivityRecorder activityRecorder,
+    ExternalNotificationEmailService notificationEmails) : ControllerBase
 {
     [HttpGet("members")]
     public async Task<IActionResult> GetMembers([FromQuery] Guid? workspaceId, CancellationToken cancellationToken)
@@ -137,7 +139,7 @@ public sealed class WorkspaceMembersController(
             JoinedAt = DateTime.UtcNow
         }));
 
-        context.Notifications.Add(new Notification
+        var notification = new Notification
         {
             UserId = invitedUserId,
             WorkspaceId = workspaceId,
@@ -145,9 +147,11 @@ public sealed class WorkspaceMembersController(
             Message = workspace.Name,
             Type = "workspace_member",
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        context.Notifications.Add(notification);
 
         await context.SaveChangesAsync(cancellationToken);
+        await notificationEmails.QueueAsync(notification, cancellationToken);
         await activityRecorder.RecordAsync(
             workspaceId, null, null, currentUserId, "members", invitedUserId.ToString(), user.FullName,
             "adicionado", cancellationToken);

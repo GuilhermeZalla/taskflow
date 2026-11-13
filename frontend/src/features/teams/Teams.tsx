@@ -1,4 +1,4 @@
-import { t as translate, localizeError } from "@/i18n/core";
+import { t as translate, localizeError, getLocale } from "@/i18n/core";
 import { useLanguage } from "@/i18n/react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,12 @@ export function Teams() {
     [workspace, setWorkspace] = useState(""),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const invitations = useQuery({
+    queryKey: ["workspace-invitations", workspace],
+    enabled: !demo && Boolean(workspace),
+    queryFn: async () =>
+      (await api.get<Invitation[]>(`/api/workspaces/${workspace}/invitations`)).data,
+  });
   const [failed, setFailed] = useState(false);
   const items = members.data?.filter(
     (m) =>
@@ -80,7 +86,7 @@ export function Teams() {
         </p>
       ) : (
         <p className="page-note">
-          {translate("Adicione contas já registradas. Convites por e-mail ainda não estão configurados.")}
+          {translate("Convide pessoas para este espaço por e-mail.")}
         </p>
       )}
       {adding && (
@@ -103,16 +109,17 @@ export function Teams() {
               } else {
                 const apiRole =
                   role === "Responsável" ? "Manager" : role === "Observador" ? "Observer" : "Member";
-                await api.post("/api/workspaces/" + workspace + "/members", {
+                await api.post("/api/workspaces/" + workspace + "/invitations", {
                   email: email.trim(),
                   role: apiRole,
                 });
               }
               await cache.invalidateQueries();
+              await invitations.refetch();
               setName("");
               setEmail("");
               setAdding(false);
-              setMessage(demo ? "Participante adicionado à demonstração." : "Participante adicionado.");
+              setMessage(demo ? "Participante adicionado à demonstração." : "Convite registrado e aguardando envio.");
             } catch (e) {
               setFailed(true);
               setMessage(handleApiError(e).message);
@@ -175,6 +182,77 @@ export function Teams() {
         <p className={failed ? "error" : "notice"} role={failed ? "alert" : "status"}>
           {failed ? localizeError(message) : translate(message)}
         </p>
+      )}
+      {!demo && workspace && (
+        <section className="settings-section" aria-labelledby="pending-invitations-heading">
+          <div>
+            <p className="eyebrow">{translate("CONVITES")}</p>
+            <h2 id="pending-invitations-heading">{translate("Convites pendentes")}</h2>
+            <p>{translate("Os convites expiram em sete dias. Enviar novamente renova o link.")}</p>
+          </div>
+          <Feedback loading={invitations.isLoading} error={!!invitations.error} retry={invitations.refetch}>
+            {invitations.data?.length ? (
+              <div className="member-list">
+                {invitations.data.map((invitation) => (
+                  <article className="member-row" key={invitation.id}>
+                    <div>
+                      <h3>{invitation.email}</h3>
+                      <small>{translate("Expira em")} {new Date(invitation.expiresAt).toLocaleDateString(getLocale())}</small>
+                    </div>
+                    <span className="badge">
+                      {translate(({ Manager: "Responsável", Member: "Colaborador", Observer: "Observador" } as Record<string, string>)[invitation.role] || invitation.role)}
+                    </span>
+                    <button
+                      className="quiet"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setFailed(false);
+                        try {
+                          await api.post(`/api/workspaces/${workspace}/invitations`, {
+                            email: invitation.email,
+                            role: invitation.role,
+                          });
+                          await invitations.refetch();
+                          setMessage("Convite registrado e aguardando envio.");
+                        } catch (error) {
+                          setFailed(true);
+                          setMessage(handleApiError(error).message);
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      {translate("Enviar novamente")}
+                    </button>
+                    <button
+                      className="quiet delete"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setFailed(false);
+                        try {
+                          await api.delete(`/api/workspaces/${workspace}/invitations/${invitation.id}`);
+                          await invitations.refetch();
+                          setMessage("Convite cancelado.");
+                        } catch (error) {
+                          setFailed(true);
+                          setMessage(handleApiError(error).message);
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      {translate("Cancelar convite")}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">{translate("Nenhum convite pendente neste espaço.")}</p>
+            )}
+          </Feedback>
+        </section>
       )}
       <>
           <div className="toolbar">
@@ -272,3 +350,11 @@ export function Teams() {
     </>
   );
 }
+
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  expiresAt: string;
+};

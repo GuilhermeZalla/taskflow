@@ -4,6 +4,13 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Home } from "src/features/dashboard/Home";
 import { Login } from "src/features/auth/Login";
 import { Register } from "src/features/auth/Register";
+import {
+  AcceptInvitation,
+  ConfirmEmail,
+  ForgotPassword,
+  ResendConfirmation,
+  ResetPassword,
+} from "@/features/auth/EmailFlows";
 import { Layout } from "src/components/ui/Layout";
 import { Workspaces } from "src/features/workspaces/Workspaces";
 import { Projects } from "src/features/projects/Projects";
@@ -30,6 +37,11 @@ function NotFound() {
 const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
+  { path: "/confirm-email", element: <ConfirmEmail /> },
+  { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/resend-confirmation", element: <ResendConfirmation /> },
+  { path: "/reset-password", element: <ResetPassword /> },
+  { path: "/accept-invitation", element: <AcceptInvitation /> },
   {
     path: "/",
     element: <Layout />,

@@ -1,24 +1,29 @@
 import { LanguageSelector } from "@/i18n/react";
-import { t as translate } from "@/i18n/core";
+import { t as translate, localizeError } from "@/i18n/core";
 import { useLanguage } from "@/i18n/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeading, Feedback } from "@/components/ui/Shared";
-import { api } from "@/services/api";
+import { api, handleApiError } from "@/services/api";
 import { isDemo, demoStorageKey } from "@/services/demo";
 export function Settings() {
   useLanguage();
   const demo = isDemo(),
     cache = useQueryClient();
   const [density, setDensity] = useState(localStorage.getItem("taskflow.density") || "comfortable"),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [emailNotifications, setEmailNotifications] = useState(false),
+    [savingEmailPreference, setSavingEmailPreference] = useState(false);
   const profile = useQuery({
     queryKey: ["profile"],
     enabled: !demo,
     retry: 1,
     queryFn: async () =>
-      (await api.get<{ email?: string; fullName?: string; userId?: string }>("/api/auth/me")).data,
+      (await api.get<{ email?: string; fullName?: string; userId?: string; emailConfirmed?: boolean; emailNotificationsEnabled?: boolean }>("/api/auth/me")).data,
   });
+  useEffect(() => {
+    if (profile.data) setEmailNotifications(profile.data.emailNotificationsEnabled ?? false);
+  }, [profile.data]);
   return (
     <>
       <PageHeading
@@ -33,6 +38,49 @@ export function Settings() {
         </div>
         <LanguageSelector />
       </section>
+      {!demo && (
+        <section className="settings-section">
+          <div>
+            <p className="eyebrow">{translate("E-MAIL")}</p>
+            <h2>{translate("Notificações por e-mail")}</h2>
+            <p>{translate("Receba atualizações de tarefas atribuídas, menções e prazos próximos.")}</p>
+            {profile.data?.emailConfirmed === false && (
+              <p className="page-note">{translate("Confirme seu endereço de e-mail para ativar notificações externas.")}</p>
+            )}
+          </div>
+          <div className="form-actions">
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={emailNotifications}
+                disabled={!profile.data?.emailConfirmed || savingEmailPreference}
+                onChange={(event) => setEmailNotifications(event.target.checked)}
+              />
+              {translate("Ativar notificações por e-mail")}
+            </label>
+            <button
+              className="button secondary"
+              disabled={!profile.data?.emailConfirmed || savingEmailPreference || emailNotifications === (profile.data?.emailNotificationsEnabled ?? false)}
+              onClick={async () => {
+                setSavingEmailPreference(true);
+                setMessage("");
+                try {
+                  await api.put("/api/auth/email-notifications", { enabled: emailNotifications });
+                  await cache.invalidateQueries({ queryKey: ["profile"] });
+                  setMessage("Preferência de e-mail salva.");
+                } catch (error) {
+                  setMessage(localizeError(handleApiError(error).message));
+                  setEmailNotifications(profile.data?.emailNotificationsEnabled ?? false);
+                } finally {
+                  setSavingEmailPreference(false);
+                }
+              }}
+            >
+              {savingEmailPreference ? translate("Salvando…") : translate("Salvar preferência")}
+            </button>
+          </div>
+        </section>
+      )}
       <section className="settings-section">
         <div>
           <p className="eyebrow">{translate("APRESENTAÇÃO")}</p>

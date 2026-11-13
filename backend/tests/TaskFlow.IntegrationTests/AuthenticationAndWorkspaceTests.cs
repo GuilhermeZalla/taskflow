@@ -22,6 +22,15 @@ public class AuthenticationAndWorkspaceTests
 
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
 
+        var unconfirmedLogin = await client.PostAsJsonAsync("/login", new
+        {
+            email = "taylor@example.com",
+            password = "StrongPassword123"
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, unconfirmedLogin.StatusCode);
+
+        await factory.ConfirmEmailAsync("taylor@example.com");
+
         var login = await client.PostAsJsonAsync("/login", new
         {
             email = "taylor@example.com",
@@ -37,6 +46,14 @@ public class AuthenticationAndWorkspaceTests
         var profile = await client.GetFromJsonAsync<JsonElement>("/api/auth/me");
         Assert.Equal("taylor@example.com", profile.GetProperty("email").GetString());
         Assert.Equal("Taylor Example", profile.GetProperty("fullName").GetString());
+
+        var languagePreference = await client.PutAsJsonAsync(
+            "/api/auth/language", new { language = "en" });
+        Assert.Equal(HttpStatusCode.OK, languagePreference.StatusCode);
+        var updatedProfile = await client.GetFromJsonAsync<JsonElement>("/api/auth/me");
+        Assert.Equal("en", updatedProfile.GetProperty("preferredLanguage").GetString());
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(
+            "/api/auth/language", new { language = "fr" })).StatusCode);
 
         var createWorkspace = await client.PostAsJsonAsync("/api/workspaces", new
         {

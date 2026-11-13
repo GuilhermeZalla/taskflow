@@ -61,7 +61,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             try {
               if (register) {
                 await api.post("/api/auth/register", { fullName, email, password });
-                setMessage("Conta criada. Entre com seu e-mail e senha.");
+                setMessage("Conta criada. Confirme seu e-mail pelo link enviado antes de entrar.");
                 setFullName("");
                 setPassword("");
                 setConfirm("");
@@ -72,10 +72,16 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 sessionStorage.removeItem("taskflow.preview");
                 localStorage.setItem("accessToken", token);
                 cache.clear();
-                navigate("/");
+                const invitationToken = sessionStorage.getItem("taskflow.pendingInvitation");
+                navigate(invitationToken ? "/accept-invitation" : "/");
               }
             } catch (e) {
-              setError(handleApiError(e).message);
+              const apiError = handleApiError(e);
+              setError(
+                !register && apiError.status === 401
+                  ? translate("Não foi possível entrar. Confira seus dados e confirme seu e-mail.")
+                  : apiError.message,
+              );
             } finally {
               setBusy(false);
             }
@@ -177,6 +183,12 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               {register ? translate("Entrar") : translate("Criar conta")}
             </Link>
           </p>
+          {!register && (
+            <p className="auth-switch auth-recovery-links">
+              <Link to="/forgot-password">{translate("Esqueci minha senha")}</Link>
+              <Link to="/resend-confirmation">{translate("Reenviar confirmação de e-mail")}</Link>
+            </p>
+          )}
           <div className="demo-entry">
             <button
               type="button"

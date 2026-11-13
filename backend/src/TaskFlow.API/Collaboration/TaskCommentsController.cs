@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Domain.Entities;
+using TaskFlow.API.Email;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.API.Collaboration;
@@ -14,7 +15,8 @@ namespace TaskFlow.API.Collaboration;
 public sealed class TaskCommentsController(
     AppDbContext context,
     UserManager<ApplicationUser> userManager,
-    ActivityRecorder activityRecorder) : ControllerBase
+    ActivityRecorder activityRecorder,
+    ExternalNotificationEmailService notificationEmails) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetComments(Guid taskId, CancellationToken cancellationToken)
@@ -119,7 +121,7 @@ public sealed class TaskCommentsController(
             CommentId = comment.Id,
             UserId = mentionedId
         }));
-        context.Notifications.AddRange(mentionedIds.Select(mentionedId => new Notification
+        var notifications = mentionedIds.Select(mentionedId => new Notification
         {
             UserId = mentionedId,
             WorkspaceId = task.Project.WorkspaceId,
@@ -129,9 +131,14 @@ public sealed class TaskCommentsController(
             Message = task.Title,
             Type = "mention",
             CreatedAt = DateTime.UtcNow
-        }));
+        }).ToList();
+        context.Notifications.AddRange(notifications);
 
         await context.SaveChangesAsync(cancellationToken);
+        foreach (var notification in notifications)
+        {
+            await notificationEmails.QueueAsync(notification, cancellationToken);
+        }
         await activityRecorder.RecordAsync(
             task.Project.WorkspaceId, task.ProjectId, taskId, userId,
             "tasks", taskId.ToString(), task.Title, "comentário adicionado", cancellationToken);

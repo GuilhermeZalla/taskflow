@@ -31,6 +31,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CommentMention> CommentMentions { get; set; } = null!;
     public DbSet<ProjectTemplate> ProjectTemplates { get; set; } = null!;
     public DbSet<ProjectTemplateTask> ProjectTemplateTasks { get; set; } = null!;
+    public DbSet<WorkspaceInvitation> WorkspaceInvitations { get; set; } = null!;
+    public DbSet<EmailOutboxMessage> EmailOutboxMessages { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -41,6 +43,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(u => u.FullName).IsRequired().HasMaxLength(200);
             entity.Property(u => u.CreatedAt).IsRequired();
+            entity.Property(u => u.EmailNotificationsEnabled).HasDefaultValue(false);
+            entity.Property(u => u.PreferredLanguage).IsRequired().HasMaxLength(10).HasDefaultValue("pt-BR");
         });
 
         // Configurações de entidades de domínio
@@ -234,6 +238,36 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<WorkspaceInvitation>(entity =>
+        {
+            entity.HasKey(invitation => invitation.Id);
+            entity.Property(invitation => invitation.Email).IsRequired().HasMaxLength(320);
+            entity.Property(invitation => invitation.NormalizedEmail).IsRequired().HasMaxLength(320);
+            entity.Property(invitation => invitation.Role).IsRequired().HasMaxLength(50);
+            entity.Property(invitation => invitation.TokenHash).IsRequired().HasMaxLength(64);
+            entity.Property(invitation => invitation.CreatedAt).IsRequired();
+            entity.Property(invitation => invitation.ExpiresAt).IsRequired();
+            entity.HasIndex(invitation => new { invitation.WorkspaceId, invitation.NormalizedEmail });
+            entity.HasIndex(invitation => invitation.TokenHash).IsUnique();
+            entity.HasOne<Workspace>()
+                .WithMany()
+                .HasForeignKey(invitation => invitation.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<EmailOutboxMessage>(entity =>
+        {
+            entity.HasKey(message => message.Id);
+            entity.Property(message => message.RecipientEmail).IsRequired().HasMaxLength(320);
+            entity.Property(message => message.Subject).IsRequired().HasMaxLength(200);
+            entity.Property(message => message.ProtectedHtmlBody).IsRequired();
+            entity.Property(message => message.ProtectedTextBody).IsRequired();
+            entity.Property(message => message.CreatedAt).IsRequired();
+            entity.Property(message => message.NextAttemptAt).IsRequired();
+            entity.Property(message => message.AttemptCount).IsRequired();
+            entity.Property(message => message.LastErrorCode).HasMaxLength(100);
+            entity.HasIndex(message => new { message.SentAt, message.FailedAt, message.NextAttemptAt });
+        });
         builder.Entity<ProjectTemplateTask>(entity =>
         {
             entity.HasKey(task => task.Id);

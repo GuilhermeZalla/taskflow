@@ -1,6 +1,8 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getLanguage, setLanguage, subscribeLanguage, t, type Language } from "./core";
+import { api } from "@/services/api";
+import { isDemo } from "@/services/demo";
 export function useLanguage() {
   return useSyncExternalStore(subscribeLanguage, getLanguage, () => "pt-BR" as Language);
 }
@@ -14,8 +16,12 @@ export function LanguageSelector() {
         aria-label={t("Idioma")}
         value={language}
         onChange={(e) => {
-          setLanguage(e.target.value as Language);
+          const nextLanguage = e.target.value as Language;
+          setLanguage(nextLanguage);
           void queryClient.invalidateQueries();
+          if (localStorage.getItem("accessToken") && !isDemo()) {
+            void api.put("/api/auth/language", { language: nextLanguage }).catch(() => undefined);
+          }
         }}
       >
         <option value="pt-BR">Português</option>

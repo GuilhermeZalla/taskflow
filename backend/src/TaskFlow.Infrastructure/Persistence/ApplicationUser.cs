@@ -11,4 +11,6 @@ public class ApplicationUser : IdentityUser
     public string FullName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+    public bool EmailNotificationsEnabled { get; set; }
+    public string PreferredLanguage { get; set; } = "pt-BR";
 }

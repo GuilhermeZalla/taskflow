@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
+using TaskFlow.API.Email;
 using TaskFlow.API.Collaboration;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -36,6 +39,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options =>
 {
     options.User.RequireUniqueEmail = true;
+    options.SignIn.RequireConfirmedEmail = true;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -56,6 +60,19 @@ if (!string.IsNullOrWhiteSpace(dataProtectionPath))
 }
 
 builder.Services.AddAuthorization();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IEmailOutboxQueue, EmailOutboxQueue>();
+builder.Services.AddScoped<EmailTemplateFactory>();
+builder.Services.AddScoped<IdentityEmailSender>();
+builder.Services.AddScoped<IEmailSender<ApplicationUser>>(services => services.GetRequiredService<IdentityEmailSender>());
+builder.Services.AddSingleton<IEmailDelivery, SmtpEmailDelivery>();
+builder.Services.AddScoped<EmailOutboxProcessor>();
+builder.Services.AddScoped<ExternalNotificationEmailService>();
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddHostedService<EmailOutboxWorker>();
+}
 builder.Services.AddScoped<ActivityRecorder>();
 builder.Services.AddHostedService<TaskReminderService>();
 
@@ -134,6 +151,9 @@ app.MapIdentityApi<ApplicationUser>();
 app.MapPost("/api/auth/register", async (
     [FromBody] RegisterRequest request,
     UserManager<ApplicationUser> userManager,
+    IEmailSender<ApplicationUser> emailSender,
+    EmailTemplateFactory emailTemplates,
+    HttpContext httpContext,
     CancellationToken cancellationToken) =>
 {
     if (string.IsNullOrWhiteSpace(request.FullName) || request.FullName.Trim().Length > 200)
@@ -165,6 +185,7 @@ app.MapPost("/api/auth/register", async (
         UserName = request.Email.Trim(),
         Email = request.Email.Trim(),
         FullName = request.FullName.Trim(),
+        PreferredLanguage = httpContext.Request.Headers.AcceptLanguage.ToString().StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "pt-BR",
         CreatedAt = DateTime.UtcNow
     };
 
@@ -176,7 +197,22 @@ app.MapPost("/api/auth/register", async (
             .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray()));
     }
 
-    return Results.Created("/api/auth/me", new { user.Id, user.Email, user.FullName });
+    var confirmationCode = await userManager.GenerateEmailConfirmationTokenAsync(user);
+    var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(confirmationCode));
+    var confirmationLink = emailTemplates.BuildFrontendLink("confirm-email", new Dictionary<string, string>
+    {
+        ["userId"] = user.Id,
+        ["code"] = encodedCode
+    });
+    await emailSender.SendConfirmationLinkAsync(user, user.Email!, confirmationLink);
+
+    return Results.Created("/api/auth/me", new
+    {
+        user.Id,
+        user.Email,
+        user.FullName,
+        emailConfirmationRequired = true
+    });
 })
 .AllowAnonymous()
 .WithName("RegisterTaskFlowUser");
@@ -184,7 +220,7 @@ app.MapPost("/api/auth/register", async (
 app.MapControllers();
 
 // Convenção de rotas: /api/{resource}
-app.MapGet("/api", () => Results.Ok(new { message = "TaskFlow API", version = "1.0.0" }));
+app.MapGet("/api", () => Results.Ok(new { message = "TaskFlow API", version = "1.1.0" }));
 
 // Endpoint para obter informações do usuário autenticado
 app.MapGet("/api/auth/me", async (
@@ -205,12 +241,67 @@ app.MapGet("/api/auth/me", async (
     {
         UserId = parsedUserId,
         Email = account.Email,
-        FullName = account.FullName
+        FullName = account.FullName,
+        EmailConfirmed = account.EmailConfirmed,
+        EmailNotificationsEnabled = account.EmailNotificationsEnabled,
+        PreferredLanguage = account.PreferredLanguage
     });
+}).RequireAuthorization();
+
+app.MapPut("/api/auth/email-notifications", async (
+    ClaimsPrincipal user,
+    [FromBody] EmailNotificationPreferenceRequest request,
+    UserManager<ApplicationUser> userManager) =>
+{
+    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var account = userId is null ? null : await userManager.FindByIdAsync(userId);
+    if (account is null) return Results.Unauthorized();
+
+    account.EmailNotificationsEnabled = request.Enabled;
+    var result = await userManager.UpdateAsync(account);
+    if (!result.Succeeded)
+    {
+        return Results.ValidationProblem(result.Errors
+            .GroupBy(error => error.Code)
+            .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray()));
+    }
+
+    return Results.Ok(new { account.EmailNotificationsEnabled });
+}).RequireAuthorization();
+
+app.MapPut("/api/auth/language", async (
+    ClaimsPrincipal user,
+    [FromBody] LanguagePreferenceRequest request,
+    UserManager<ApplicationUser> userManager) =>
+{
+    if (request.Language is not ("en" or "pt-BR"))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["language"] = ["Choose English or Portuguese."]
+        });
+    }
+
+    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var account = userId is null ? null : await userManager.FindByIdAsync(userId);
+    if (account is null) return Results.Unauthorized();
+
+    account.PreferredLanguage = request.Language;
+    var result = await userManager.UpdateAsync(account);
+    if (!result.Succeeded)
+    {
+        return Results.ValidationProblem(result.Errors
+            .GroupBy(error => error.Code)
+            .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray()));
+    }
+
+    return Results.Ok(new { account.PreferredLanguage });
 }).RequireAuthorization();
 
 app.Run();
 
 public sealed record RegisterRequest(string? FullName, string? Email, string? Password);
+public sealed record EmailNotificationPreferenceRequest(bool Enabled);
+public sealed record LanguagePreferenceRequest(string Language);
 
 public partial class Program { }

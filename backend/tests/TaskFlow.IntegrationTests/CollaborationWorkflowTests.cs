@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.IntegrationTests;
 
@@ -13,8 +16,8 @@ public class CollaborationWorkflowTests
         using var factory = new TaskFlowApiFactory();
         using var owner = factory.CreateClient();
         using var outsider = factory.CreateClient();
-        await RegisterAndLogin(owner, "planner@example.com");
-        await RegisterAndLogin(outsider, "other@example.com");
+        await RegisterAndLogin(factory, owner, "planner@example.com");
+        await RegisterAndLogin(factory, outsider, "other@example.com");
 
         var workspace = await owner.PostAsJsonAsync("/api/workspaces", new { name = "Planning" });
         var workspaceId = (await ReadJson(workspace)).GetProperty("id").GetGuid();
@@ -73,9 +76,13 @@ public class CollaborationWorkflowTests
         using var member = factory.CreateClient();
         using var outsider = factory.CreateClient();
 
-        var ownerId = await RegisterAndLogin(owner, "owner@example.com");
-        var memberId = await RegisterAndLogin(member, "member@example.com");
-        await RegisterAndLogin(outsider, "outsider@example.com");
+        var ownerId = await RegisterAndLogin(factory, owner, "owner@example.com");
+        var memberId = await RegisterAndLogin(factory, member, "member@example.com");
+        await RegisterAndLogin(factory, outsider, "outsider@example.com");
+
+        var emailPreference = await member.PutAsJsonAsync(
+            "/api/auth/email-notifications", new { enabled = true });
+        Assert.Equal(HttpStatusCode.OK, emailPreference.StatusCode);
 
         var workspaceResponse = await owner.PostAsJsonAsync("/api/workspaces", new { name = "Release team" });
         Assert.Equal(HttpStatusCode.Created, workspaceResponse.StatusCode);
@@ -102,6 +109,14 @@ public class CollaborationWorkflowTests
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync(
             $"/api/workspaces/{workspaceId}/members", new { email = "outsider@example.com", role = "Member" })).StatusCode);
 
+        int queuedEmailsBeforeMention;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            queuedEmailsBeforeMention = await context.EmailOutboxMessages.CountAsync(
+                message => message.RecipientEmail == "member@example.com");
+        }
+
         Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync(
             $"/api/tasks/{taskId}/comments", new { content = (string?)null })).StatusCode);
 
@@ -113,6 +128,13 @@ public class CollaborationWorkflowTests
         var comment = await ReadJson(commentResponse);
         Assert.Equal(ownerId, comment.GetProperty("userId").GetGuid());
         Assert.Single(comment.GetProperty("mentions").EnumerateArray());
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.True(await context.EmailOutboxMessages.CountAsync(
+                message => message.RecipientEmail == "member@example.com") > queuedEmailsBeforeMention);
+        }
 
         Assert.Equal(HttpStatusCode.NotFound, (await outsider.GetAsync($"/api/tasks/{taskId}/comments")).StatusCode);
         var notifications = await member.GetFromJsonAsync<JsonElement[]>("/api/notifications");
@@ -130,11 +152,12 @@ public class CollaborationWorkflowTests
         Assert.Equal(0, remaining.GetProperty("count").GetInt32());
     }
 
-    private static async Task<Guid> RegisterAndLogin(HttpClient client, string email)
+    private static async Task<Guid> RegisterAndLogin(TaskFlowApiFactory factory, HttpClient client, string email)
     {
         const string password = "StrongPassword123";
         var register = await client.PostAsJsonAsync("/api/auth/register", new { fullName = email, email, password });
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
+        await factory.ConfirmEmailAsync(email);
         var userId = (await ReadJson(register)).GetProperty("id").GetGuid();
         var login = await client.PostAsJsonAsync("/login", new { email, password });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
