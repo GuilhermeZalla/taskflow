@@ -132,7 +132,7 @@ Email messages are stored in an encrypted database outbox and sent by a backgrou
 
 Port 587 uses STARTTLS by default. For a provider that requires implicit TLS on port 465, set `$env:Email__Smtp__UseSslOnConnect = 'true'` in the API terminal.
 
-The `AddEmailWorkflows` migration is applied to the local MySQL database. Email confirmation is now required for login, so each existing account must confirm its address once. The local environment is configured for the Mailtrap Sandbox; restart the API with the SMTP environment variables loaded and verify the messages in the Mailtrap inbox before relying on delivery.
+The `AddEmailWorkflows` migration is applied to the local MySQL database. Email confirmation is now required for login, so each existing account must confirm its address once. Delivery through the Mailtrap Sandbox has been verified for account confirmation and password reset. Invitation and external notification emails still need to be checked in the Sandbox. Sandbox testing does not verify delivery to real recipients.
 
 The command above explicitly uses port 5080 to match the frontend's default HTTP client URL. The original HTTP profile in `launchSettings.json` uses port 5171; if you choose that profile, configure the frontend to use the same address.
 
@@ -220,7 +220,7 @@ The screenshots and GIFs in this README verify the presentation and flows shown 
 
 ## Current status and next steps
 
-Version 1.1 email workflows are implemented locally: account confirmation and recovery, workspace invitations, and opt-in external notifications. The `AddEmailWorkflows` MySQL migration is applied to the local database. Mailtrap Sandbox settings are configured locally, but message delivery still needs to be verified from the Mailtrap inbox. Validate all email flows and perform a clean installation before creating the 1.1 release.
+Version 1.1 email workflows are implemented locally: account confirmation and recovery, workspace invitations, and opt-in external notifications. The `AddEmailWorkflows` MySQL migration is applied to the local database, and a clean installation was confirmed by the project owner. Mailtrap Sandbox delivery was confirmed for account confirmation and password reset; invitation and external notification emails still need validation before the 1.1 release.
 
 See [status.md](status.md) for validations and remaining work. Public hosting, HTTPS, production backups, and a production license for MediatR remain a separate future phase. The project is a responsive web application and has no native app.
 

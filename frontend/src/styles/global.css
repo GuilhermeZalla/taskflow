@@ -2716,6 +2716,14 @@ textarea {
 .email-flow-login-type .email-flow-back {
   font-size: 13px;
 }
+.invitation-account-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+.invitation-account-actions > * {
+  width: 100%;
+}
 @media (max-width: 760px) {
   .topbar {
     display: grid;

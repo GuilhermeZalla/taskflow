@@ -238,6 +238,7 @@ export function AcceptInvitation() {
   const authenticated = Boolean(localStorage.getItem("accessToken"));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [accountAccessIssue, setAccountAccessIssue] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const invitationRequest = useRef<ReturnType<typeof api.post> | null>(null);
 
@@ -259,7 +260,11 @@ export function AcceptInvitation() {
         if (active) setAccepted(true);
         if (active) setBusy(false);
       }, (cause) => {
-        if (active) setError(handleApiError(cause).message);
+        const apiError = handleApiError(cause);
+        if (active) {
+          setError(apiError.message);
+          setAccountAccessIssue(apiError.status === 403);
+        }
         if (active) setBusy(false);
       });
     return () => {
@@ -282,7 +287,35 @@ export function AcceptInvitation() {
         </>
       )}
       {busy && <p role="status">{translate("Aceitando o convite…")}</p>}
-      {error && <p className="error" role="alert">{localizeError(error)}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {accountAccessIssue
+            ? translate("Para aceitar o convite, entre com uma conta confirmada usando o mesmo e-mail que recebeu o convite.")
+            : localizeError(error)}
+        </p>
+      )}
+      {accountAccessIssue && (
+        <>
+          <p className="muted">
+            {translate("Confirme o e-mail e entre com a conta convidada. O convite continua salvo neste navegador.")}
+          </p>
+          <div className="invitation-account-actions">
+            <button
+              className="button"
+              onClick={() => {
+                localStorage.removeItem("accessToken");
+                sessionStorage.removeItem("taskflow.preview");
+                navigate("/login");
+              }}
+            >
+              {translate("Sair e entrar com a conta convidada")}
+            </button>
+            <Link className="button secondary" to="/resend-confirmation">
+              {translate("Reenviar confirmação de e-mail")}
+            </Link>
+          </div>
+        </>
+      )}
       {accepted && <p className="success" role="status">{translate("Convite aceito. Você já faz parte do espaço.")}</p>}
       {accepted && <button className="button" onClick={() => navigate("/teams")}>{translate("Abrir equipes")}</button>}
       {!authenticated && <p className="auth-switch"><Link to="/login">{translate("Voltar para entrar")}</Link></p>}

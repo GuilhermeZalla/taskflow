@@ -2,19 +2,19 @@
 
 ## Implementação local da versão 1.1 — 13/11/2026
 
-- **Confirmação e recuperação de conta:** cadastro envia confirmação, login bloqueia contas não confirmadas, há reenvio de confirmação e redefinição de senha por link. Implementação validada por teste HTTP com token e e-mail registrado na outbox.
+- **Confirmação e recuperação de conta:** cadastro envia confirmação, login bloqueia contas não confirmadas, há reenvio de confirmação e redefinição de senha por link. O titular confirmou o recebimento e o funcionamento dos fluxos de confirmação e redefinição no ambiente local.
 - **Convites por e-mail:** convite para espaço, reenvio que renova o token, cancelamento, listagem de pendentes e aceitação autenticada. O token é armazenado como hash, expira em sete dias e só pode ser aceito por uma conta confirmada com o mesmo endereço.
 - **Notificações externas:** envio opcional por e-mail para atribuições, menções, novos participantes e lembretes de prazo. A preferência começa desativada e pode ser alterada em Preferências. O idioma escolhido no produto é salvo na conta para as notificações.
-- **Entrega de e-mail:** mensagens HTML e texto são persistidas em uma outbox com os corpos protegidos por Data Protection, processamento em segundo plano e novas tentativas. O `.env` local foi configurado com Mailtrap Sandbox; ainda falta iniciar/reiniciar a API com essas variáveis carregadas e verificar as mensagens na caixa de entrada do Sandbox. Isso não comprova entrega a destinatários reais.
+- **Entrega de e-mail:** mensagens HTML e texto são persistidas em uma outbox com os corpos protegidos por Data Protection, processamento em segundo plano e novas tentativas. O titular confirmou a entrega no Mailtrap Sandbox para confirmação de conta e redefinição de senha. Convites e notificações externas ainda precisam ser conferidos no Sandbox; os testes não comprovam entrega a destinatários reais.
 - **Banco:** migration `20261113180102_AddEmailWorkflows` aplicada ao `TaskFlowDb` local na porta 3307. A execução de conferência confirmou que o banco está atualizado e não há migrations pendentes. Backup anterior à aplicação: `C:\Users\zalla\Documents\TaskFlowBackups\TaskFlowDb-before-AddEmailWorkflows-20261113-153750.sql`.
 - **Validação desta rodada:** `dotnet test backend/TaskFlow.slnx --no-restore` aprovado (5 unitários e 6 de integração HTTP); `npm run build --prefix frontend` aprovado. Os testes HTTP usam EF Core InMemory; não provam o envio real por SMTP nem a aplicação da migration em MySQL.
 - Alterações estão apenas na cópia local; não houve commit ou push.
 
 ### Pendências para finalizar a 1.1
 
-- [ ] Iniciar/reiniciar a API com as variáveis do Mailtrap Sandbox carregadas e conferir confirmação, recuperação, convite e notificação na caixa de entrada do Sandbox. Não enviar credenciais por chat ou armazená-las no repositório.
-- [ ] Validar os novos fluxos usando MySQL após a migration. Contas existentes terão de confirmar o e-mail antes de voltar a entrar.
-- [ ] Fazer uma instalação limpa em diretório/ambiente novo e validar as instruções do README.
+- [ ] Conferir o envio de convites e notificações externas na caixa de entrada do Mailtrap Sandbox. Não enviar credenciais por chat ou armazená-las no repositório.
+- [x] Aplicar a migration e validar confirmação de conta e redefinição de senha no ambiente local com MySQL. Contas existentes terão de confirmar o e-mail antes de voltar a entrar.
+- [x] Fazer uma instalação limpa em diretório/ambiente novo e validar as instruções do README; o titular confirmou que concluiu e funcionou.
 - [ ] Preparar e publicar a release `v1.1.0` depois das validações locais.
 
 ## Etapa futura: hospedagem pública

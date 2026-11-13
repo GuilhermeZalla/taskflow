@@ -65,7 +65,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEmailOutboxQueue, EmailOutboxQueue>();
 builder.Services.AddScoped<EmailTemplateFactory>();
 builder.Services.AddScoped<IdentityEmailSender>();
-builder.Services.AddScoped<IEmailSender<ApplicationUser>>(services => services.GetRequiredService<IdentityEmailSender>());
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, ScopedIdentityEmailSenderProxy>();
 builder.Services.AddSingleton<IEmailDelivery, SmtpEmailDelivery>();
 builder.Services.AddScoped<EmailOutboxProcessor>();
 builder.Services.AddScoped<ExternalNotificationEmailService>();

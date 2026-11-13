@@ -52,11 +52,30 @@ export class ApiErrorClass extends Error {
 
 export const handleApiError = (error: any): ApiErrorClass => {
   const status = error?.response?.status ?? 500;
+  const data = error?.response?.data;
+  const validationErrors = data?.errors ?? {};
+  const validationEntries = Object.entries(validationErrors);
+  const identityErrorMessages: Record<string, string> = {
+    duplicateemail: "Este e-mail já está cadastrado. Entre na conta ou use as opções de recuperação.",
+    duplicateusername: "Este e-mail já está cadastrado. Entre na conta ou use as opções de recuperação.",
+    invalidemail: "Informe um endereço de e-mail válido.",
+    passwordtooshort: "A senha não atende ao tamanho mínimo exigido.",
+    passwordrequiresdigit: "A senha precisa conter pelo menos um número.",
+    passwordrequireslower: "A senha precisa conter pelo menos uma letra minúscula.",
+    passwordrequiresupper: "A senha precisa conter pelo menos uma letra maiúscula.",
+  };
+  const identityMessage = validationEntries
+    .map(([code]) => identityErrorMessages[code.toLowerCase()])
+    .find(Boolean);
+  const firstValidationMessage = validationEntries
+    .flatMap(([, messages]) => Array.isArray(messages) ? messages : [messages])
+    .find((message) => typeof message === "string" && message.trim());
+  const validationMessage = identityMessage ?? firstValidationMessage;
   const message =
-    error?.response?.data?.detail ??
-    error?.response?.data?.title ??
-    Object.values(error?.response?.data?.errors ?? {}).flat().find(Boolean) ??
+    validationMessage ??
+    data?.detail ??
+    data?.title ??
     error?.message ??
     "Erro na requisição";
-  return new ApiErrorClass(message, status, error?.response?.data);
+  return new ApiErrorClass(message, status, data);
 };
